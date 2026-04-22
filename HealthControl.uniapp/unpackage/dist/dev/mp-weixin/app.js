@@ -11,7 +11,7 @@ if (!Math) {
   "./pages/Front/PasswordEdit.js";
   "./pages/Front/UserInfoEdit.js";
   "./pages/Front/HealthIndicatorList.js";
-  "./pages/Templete/HealthIndicatorTypeList.js";
+  "./pages/Front/HealthIndicatorTypeList.js";
   "./pages/Front/CommHealthIndicatorTypeList.js";
   "./pages/Front/HealthIndicatorForm.js";
   "./pages/Front/BatchRecordForm.js";

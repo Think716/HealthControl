@@ -6,18 +6,14 @@ const utils_comm = require("../../utils/comm.js");
 if (!Array) {
   const _easycom_uni_nav_bar2 = common_vendor.resolveComponent("uni-nav-bar");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  const _easycom_uni_easyinput2 = common_vendor.resolveComponent("uni-easyinput");
-  const _easycom_uni_datetime_picker2 = common_vendor.resolveComponent("uni-datetime-picker");
   const _easycom_uni_popup2 = common_vendor.resolveComponent("uni-popup");
-  (_easycom_uni_nav_bar2 + _easycom_uni_icons2 + _easycom_uni_easyinput2 + _easycom_uni_datetime_picker2 + _easycom_uni_popup2)();
+  (_easycom_uni_nav_bar2 + _easycom_uni_icons2 + _easycom_uni_popup2)();
 }
 const _easycom_uni_nav_bar = () => "../../uni_modules/uni-nav-bar/components/uni-nav-bar/uni-nav-bar.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
-const _easycom_uni_easyinput = () => "../../uni_modules/uni-easyinput/components/uni-easyinput/uni-easyinput.js";
-const _easycom_uni_datetime_picker = () => "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker.js";
 const _easycom_uni_popup = () => "../../uni_modules/uni-popup/components/uni-popup/uni-popup.js";
 if (!Math) {
-  (_easycom_uni_nav_bar + _easycom_uni_icons + _easycom_uni_easyinput + _easycom_uni_datetime_picker + _easycom_uni_popup)();
+  (_easycom_uni_nav_bar + _easycom_uni_icons + _easycom_uni_popup)();
 }
 const _sfc_main = {
   __name: "FoodList",
@@ -31,12 +27,18 @@ const _sfc_main = {
     const activeCategory = common_vendor.ref(0);
     const scrollTop = common_vendor.ref(0);
     const selectedFood = common_vendor.ref(null);
-    const foodPopup = common_vendor.ref(null);
+    common_vendor.ref(null);
     const portionPopup = common_vendor.ref(null);
     const selectedUnit = common_vendor.ref(null);
     const portionAmount = common_vendor.ref("");
-    const recordTime = common_vendor.ref(/* @__PURE__ */ new Date());
+    const recordTime = common_vendor.ref((/* @__PURE__ */ new Date()).toISOString());
     const calculatedNutrition = common_vendor.ref(null);
+    const isRecording = common_vendor.ref(false);
+    const voiceText = common_vendor.ref("");
+    const voiceMatchedPreview = common_vendor.ref([]);
+    const foodLoadError = common_vendor.ref("");
+    let plugin = null;
+    let manager = null;
     const inputStyles = {
       borderColor: "#4CAF50",
       borderRadius: "12rpx"
@@ -46,6 +48,7 @@ const _sfc_main = {
       return portionAmount.value && parseFloat(portionAmount.value) > 0 && selectedUnit.value;
     });
     common_vendor.onLoad(async (option) => {
+      initVoicePlugin();
     });
     common_vendor.onShow(async () => {
       await GetFoodTypeListApi();
@@ -56,12 +59,20 @@ const _sfc_main = {
       common_vendor.index.navigateBack();
     };
     const GetFoodTypeListApi = async () => {
-      let {
-        Data: {
-          Items
+      var _a;
+      foodLoadError.value = "";
+      try {
+        const result = await utils_http.Post("/FoodType/List", { isQueryChild: true });
+        const items = ((_a = result == null ? void 0 : result.Data) == null ? void 0 : _a.Items) || [];
+        FoodTypeList.value = Array.isArray(items) ? items : [];
+        if (!FoodTypeList.value.length) {
+          foodLoadError.value = "食物列表为空，请先在后台维护食物数据";
         }
-      } = await utils_http.Post("/FoodType/List", { isQueryChild: true });
-      FoodTypeList.value = Items;
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:237", "获取食物列表失败:", error);
+        FoodTypeList.value = [];
+        foodLoadError.value = "食物列表加载失败，请检查网络或服务";
+      }
     };
     const selectCategory = async (index, categoryId) => {
       activeCategory.value = index;
@@ -76,40 +87,35 @@ const _sfc_main = {
       });
     };
     const onFoodScroll = (e) => {
-      const scrollTop2 = e.detail.scrollTop;
-      FoodTypeList.value.forEach((category, index) => {
-        const query = common_vendor.index.createSelectorQuery();
-        query.select(`#category-${category.Id}`).boundingClientRect();
-        query.exec((res) => {
-          if (res[0]) {
-            const categoryTop = res[0].top;
-            const categoryBottom = res[0].top + res[0].height;
-            if (scrollTop2 >= categoryTop - 200 && scrollTop2 < categoryBottom - 200) {
-              activeCategory.value = index;
-            }
+      e.detail.scrollTop;
+      const query = common_vendor.index.createSelectorQuery();
+      const categoryIds = FoodTypeList.value.map((item) => `#category-${item.Id}`);
+      if (categoryIds.length === 0)
+        return;
+      query.selectAll(categoryIds.join(",")).boundingClientRect();
+      query.exec((res) => {
+        if (!res || !res[0])
+          return;
+        const rects = res[0];
+        let currentIndex = 0;
+        for (let i = 0; i < rects.length; i++) {
+          if (rects[i].top <= 100) {
+            currentIndex = i;
+          } else {
+            break;
           }
-        });
+        }
+        activeCategory.value = currentIndex;
       });
     };
     const selectFood = (food) => {
       selectedFood.value = food;
-      foodPopup.value.open();
-    };
-    const closeFoodPopup = () => {
-      foodPopup.value.close();
-      selectedFood.value = null;
     };
     const selectUnit = (food, unit) => {
       selectedUnit.value = { food, unit };
-      portionAmount.value = "1";
-      recordTime.value = /* @__PURE__ */ new Date();
-      calculatedNutrition.value = null;
-      calculateNutrition();
       portionPopup.value.open();
-    };
-    const confirmSelectUnit = (food, unit) => {
-      closeFoodPopup();
-      selectUnit(food, unit);
+      portionAmount.value = "";
+      calculatedNutrition.value = null;
     };
     const closePortionPopup = () => {
       portionPopup.value.close();
@@ -117,59 +123,42 @@ const _sfc_main = {
       portionAmount.value = "";
       calculatedNutrition.value = null;
     };
+    const onTimeChange = (e) => {
+      recordTime.value = e.detail.value;
+    };
     const calculateNutrition = () => {
-      if (!selectedUnit.value || !portionAmount.value) {
+      if (!selectedUnit.value || !portionAmount.value || parseFloat(portionAmount.value) <= 0) {
         calculatedNutrition.value = null;
         return;
       }
+      const { food, unit } = selectedUnit.value;
       const amount = parseFloat(portionAmount.value);
-      if (isNaN(amount) || amount <= 0) {
-        calculatedNutrition.value = null;
-        return;
-      }
-      const { unit } = selectedUnit.value;
+      const unitWeight = parseFloat(unit.UnitValue || 1);
       calculatedNutrition.value = {
-        calories: Math.round(unit.Calories * amount * 100) / 100,
-        protein: Math.round(unit.Protein * amount * 100) / 100,
-        carbs: Math.round(unit.Carbohydrates * amount * 100) / 100,
-        fat: Math.round(unit.Fat * amount * 100) / 100
+        calories: (food.Calories * unitWeight * amount).toFixed(2),
+        protein: (food.Protein * unitWeight * amount).toFixed(2),
+        carbohydrates: (food.Carbohydrates * unitWeight * amount).toFixed(2),
+        fat: (food.Fat * unitWeight * amount).toFixed(2)
       };
     };
-    const formatTime = (time) => {
-      if (!time)
-        return "选择时间";
-      const date = new Date(time);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      return `${year}-${month}-${day} ${hours}:${minutes}`;
-    };
+    portionAmount.value && calculateNutrition();
     const saveDietRecord = async () => {
-      if (!canSave.value) {
-        common_vendor.index.showToast({
-          title: "请输入有效的分量",
-          icon: "none"
-        });
+      if (!canSave.value)
         return;
-      }
+      common_vendor.index.showLoading({ title: "保存中..." });
       try {
-        common_vendor.index.showLoading({
-          title: "保存中..."
-        });
-        const { food, unit } = selectedUnit.value;
-        const amount = parseInt(portionAmount.value);
-        const dietRecordData = {
-          FoodId: food.Id,
-          RecordUserId: UserId.value,
-          // 使用当前用户ID
-          FoodUnitId: unit.Id,
+        const nutrition = calculatedNutrition.value || calculateNutrition();
+        const result = await utils_http.Post("/DietRecord/Add", {
+          UserId: UserId.value,
+          FoodId: selectedUnit.value.food.Id,
+          UnitId: selectedUnit.value.unit.Id,
+          Amount: parseFloat(portionAmount.value),
           RecordTime: utils_comm.GetFormatFullDate(new Date(recordTime.value)),
-          RecordValue: amount
-        };
-        const result = await utils_http.Post("/DietRecord/CreateOrEdit", dietRecordData);
-        common_vendor.index.hideLoading();
+          Calories: parseFloat(nutrition.calories),
+          Protein: parseFloat(nutrition.protein),
+          Carbohydrates: parseFloat(nutrition.carbohydrates),
+          Fat: parseFloat(nutrition.fat)
+        });
         if (result.Success) {
           common_vendor.index.showToast({
             title: "记录保存成功！",
@@ -188,7 +177,85 @@ const _sfc_main = {
           title: "网络错误，请重试",
           icon: "none"
         });
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:445", "保存饮食记录失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:382", "保存饮食记录失败:", error);
+      }
+    };
+    const initVoicePlugin = () => {
+      try {
+        plugin = requirePlugin("WechatSI");
+        manager = plugin.getRecordRecognitionManager();
+        manager.onStart = () => {
+          isRecording.value = true;
+        };
+        manager.onStop = async (res) => {
+          isRecording.value = false;
+          if (!(res == null ? void 0 : res.result)) {
+            common_vendor.index.showToast({ title: "未识别到有效语音", icon: "none" });
+            return;
+          }
+          voiceText.value = res.result;
+          await handleVoiceRecognitionResult(res.result);
+        };
+        manager.onError = (error) => {
+          isRecording.value = false;
+          common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:408", "语音识别失败:", error);
+          common_vendor.index.showToast({
+            title: "语音识别失败，请重试",
+            icon: "none"
+          });
+        };
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:415", "初始化微信语音插件失败:", error);
+      }
+    };
+    const toggleVoiceRecording = () => {
+      if (!manager) {
+        common_vendor.index.showToast({ title: "语音能力未初始化，请检查插件配置", icon: "none" });
+        return;
+      }
+      if (isRecording.value) {
+        manager.stop();
+        return;
+      }
+      manager.start({
+        lang: "zh_CN",
+        duration: 3e4
+      });
+    };
+    const clearVoiceResult = () => {
+      voiceText.value = "";
+      voiceMatchedPreview.value = [];
+    };
+    const handleVoiceRecognitionResult = async (text) => {
+      if (!text || !text.trim()) {
+        common_vendor.index.showToast({ title: "未识别到有效语音", icon: "none" });
+        return;
+      }
+      common_vendor.index.showLoading({ title: "正在保存记录..." });
+      try {
+        const result = await utils_http.Post("/api/voice/recognize-text", {
+          Text: text,
+          UserId: UserId.value,
+          RecordTime: utils_comm.GetFormatFullDate(/* @__PURE__ */ new Date())
+        });
+        const data = (result == null ? void 0 : result.Data) || result;
+        const matchedItems = (data == null ? void 0 : data.matchedItems) || [];
+        const savedCount = (data == null ? void 0 : data.savedCount) || 0;
+        voiceMatchedPreview.value = matchedItems.map((item) => ({
+          foodName: item.foodName,
+          amount: item.count,
+          unitName: item.unitName
+        }));
+        if (savedCount > 0) {
+          common_vendor.index.showToast({ title: `已记录${savedCount}条`, icon: "success" });
+          return;
+        }
+        common_vendor.index.showToast({ title: "未匹配到食物，请更换描述", icon: "none" });
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:480", "语音记录保存失败:", error);
+        common_vendor.index.showToast({ title: "保存失败，请稍后重试", icon: "none" });
+      } finally {
+        common_vendor.index.hideLoading();
       }
     };
     return (_ctx, _cache) => {
@@ -204,7 +271,36 @@ const _sfc_main = {
           ["left-text"]: "返回",
           title: "🥗 健康食物库"
         }),
-        c: common_vendor.f(FoodTypeList.value, (category, index, i0) => {
+        c: common_vendor.p({
+          type: isRecording.value ? "mic-filled" : "mic",
+          size: "20",
+          color: "#fff"
+        }),
+        d: common_vendor.t(isRecording.value ? "结束录音" : "语音录入"),
+        e: isRecording.value ? 1 : "",
+        f: common_vendor.o(toggleVoiceRecording),
+        g: common_vendor.p({
+          type: "clear",
+          size: "18",
+          color: "#4CAF50"
+        }),
+        h: common_vendor.o(clearVoiceResult),
+        i: voiceText.value
+      }, voiceText.value ? {
+        j: common_vendor.t(voiceText.value)
+      } : {}, {
+        k: voiceMatchedPreview.value.length > 0
+      }, voiceMatchedPreview.value.length > 0 ? {
+        l: common_vendor.f(voiceMatchedPreview.value, (item, index, i0) => {
+          return {
+            a: common_vendor.t(item.foodName),
+            b: common_vendor.t(item.amount),
+            c: common_vendor.t(item.unitName),
+            d: index
+          };
+        })
+      } : {}, {
+        m: common_vendor.f(FoodTypeList.value, (category, index, i0) => {
           return {
             a: common_vendor.t(category.Name),
             b: category.Id,
@@ -212,7 +308,9 @@ const _sfc_main = {
             d: common_vendor.o(($event) => selectCategory(index, category.Id), category.Id)
           };
         }),
-        d: common_vendor.f(FoodTypeList.value, (category, k0, i0) => {
+        n: FoodTypeList.value.length > 0
+      }, FoodTypeList.value.length > 0 ? {
+        o: common_vendor.f(FoodTypeList.value, (category, k0, i0) => {
           return {
             a: common_vendor.t(category.Name),
             b: common_vendor.f(category.Foods, (food, k1, i1) => {
@@ -242,93 +340,56 @@ const _sfc_main = {
             d: `category-${category.Id}`
           };
         }),
-        e: common_vendor.o(onFoodScroll),
-        f: scrollTop.value,
-        g: selectedUnit.value
+        p: common_vendor.o(onFoodScroll),
+        q: scrollTop.value
+      } : {
+        r: common_vendor.p({
+          type: "info",
+          size: "28",
+          color: "#7cb67c"
+        }),
+        s: common_vendor.t(foodLoadError.value || "暂无食物数据，请稍后重试")
+      }, {
+        t: selectedUnit.value
       }, selectedUnit.value ? common_vendor.e({
-        h: common_vendor.p({
+        v: common_vendor.p({
           type: "closeempty",
           size: "24",
           color: "#666"
         }),
-        i: common_vendor.o(closePortionPopup),
-        j: selectedUnit.value.food.Cover,
-        k: common_vendor.t(selectedUnit.value.food.Name),
-        l: common_vendor.t(selectedUnit.value.unit.UnitName),
-        m: common_vendor.t(selectedUnit.value.unit.UnitValue),
-        n: common_vendor.o(calculateNutrition),
-        o: common_vendor.o(($event) => portionAmount.value = $event),
-        p: common_vendor.p({
-          type: "number",
-          placeholder: `请输入${selectedUnit.value.unit.UnitName}数量`,
-          styles: inputStyles,
-          modelValue: portionAmount.value
-        }),
-        q: common_vendor.t(selectedUnit.value.unit.UnitName),
-        r: calculatedNutrition.value
+        w: common_vendor.o(closePortionPopup),
+        x: selectedUnit.value.food.Cover,
+        y: common_vendor.t(selectedUnit.value.food.Name),
+        z: common_vendor.t(selectedUnit.value.unit.UnitName),
+        A: common_vendor.t(selectedUnit.value.unit.UnitValue),
+        B: common_vendor.s(inputStyles),
+        C: portionAmount.value,
+        D: common_vendor.o(($event) => portionAmount.value = $event.detail.value),
+        E: calculatedNutrition.value
       }, calculatedNutrition.value ? {
-        s: common_vendor.t(calculatedNutrition.value.calories),
-        t: common_vendor.t(calculatedNutrition.value.protein),
-        v: common_vendor.t(calculatedNutrition.value.carbs),
-        w: common_vendor.t(calculatedNutrition.value.fat)
+        F: common_vendor.t(calculatedNutrition.value.calories),
+        G: common_vendor.t(calculatedNutrition.value.protein),
+        H: common_vendor.t(calculatedNutrition.value.carbohydrates),
+        I: common_vendor.t(calculatedNutrition.value.fat)
       } : {}, {
-        x: common_vendor.t(formatTime(recordTime.value)),
-        y: common_vendor.p({
-          type: "calendar",
-          size: "20",
-          color: "#4CAF50"
-        }),
-        z: common_vendor.o(($event) => recordTime.value = $event),
-        A: common_vendor.p({
-          type: "datetime",
-          ["clear-icon"]: false,
-          border: false,
-          placeholder: "选择记录时间",
-          modelValue: recordTime.value
-        }),
-        B: common_vendor.o(closePortionPopup),
-        C: common_vendor.o(saveDietRecord),
-        D: !canSave.value ? 1 : ""
-      }) : {}, {
-        E: common_vendor.sr(portionPopup, "05c655f0-1", {
-          "k": "portionPopup"
-        }),
-        F: common_vendor.p({
-          type: "center",
-          ["background-color"]: "rgba(0,0,0,0.5)"
-        }),
-        G: selectedFood.value
-      }, selectedFood.value ? common_vendor.e({
-        H: common_vendor.t(selectedFood.value.Name),
-        I: common_vendor.p({
-          type: "closeempty",
-          size: "24",
+        J: common_vendor.t(recordTime.value),
+        K: common_vendor.p({
+          type: "arrowright",
+          size: "18",
           color: "#999"
         }),
-        J: common_vendor.o(closeFoodPopup),
-        K: selectedFood.value.Cover,
-        L: common_vendor.t(selectedFood.value.Calories),
-        M: common_vendor.t(selectedFood.value.Protein),
-        N: common_vendor.t(selectedFood.value.Carbohydrates),
-        O: common_vendor.t(selectedFood.value.Fat),
-        P: selectedFood.value.FoodUnits && selectedFood.value.FoodUnits.length > 0
-      }, selectedFood.value.FoodUnits && selectedFood.value.FoodUnits.length > 0 ? {
-        Q: common_vendor.f(selectedFood.value.FoodUnits, (unit, k0, i0) => {
-          return {
-            a: common_vendor.t(unit.UnitName),
-            b: common_vendor.t(unit.UnitValue),
-            c: common_vendor.t(unit.Calories),
-            d: unit.Id,
-            e: common_vendor.o(($event) => confirmSelectUnit(selectedFood.value, unit), unit.Id)
-          };
-        })
-      } : {}) : {}, {
-        R: common_vendor.sr(foodPopup, "05c655f0-6", {
-          "k": "foodPopup"
+        L: recordTime.value,
+        M: common_vendor.o(onTimeChange),
+        N: common_vendor.o(closePortionPopup),
+        O: !canSave.value,
+        P: common_vendor.o(saveDietRecord)
+      }) : {}, {
+        Q: common_vendor.sr(portionPopup, "05c655f0-4", {
+          "k": "portionPopup"
         }),
-        S: common_vendor.p({
-          type: "bottom",
-          ["background-color"]: "#f8fdf8"
+        R: common_vendor.p({
+          type: "center",
+          ["background-color"]: "rgba(0,0,0,0.5)"
         })
       });
     };

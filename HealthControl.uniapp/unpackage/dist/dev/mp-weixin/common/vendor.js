@@ -6492,8 +6492,8 @@ function populateParameters(fromRes, toRes) {
   let _SDKVersion = SDKVersion;
   const hostLanguage = (language || "").replace(/_/g, "-");
   const parameters = {
-    appId: "",
-    appName: "baseuniapp",
+    appId: "__UNI__HealthControl",
+    appName: "HealthControl",
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
@@ -6641,8 +6641,8 @@ const getAppBaseInfo = {
       hostName: _hostName,
       hostSDKVersion: SDKVersion,
       hostTheme: theme,
-      appId: "",
-      appName: "baseuniapp",
+      appId: "__UNI__HealthControl",
+      appName: "HealthControl",
       appVersion: "1.0.0",
       appVersionCode: "100",
       appLanguage: getAppLanguage(hostLanguage),
@@ -7394,9 +7394,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "10.64.131.255,127.0.0.1";
+  const hosts = "10.64.129.158,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_95T0cK";
+  const id = "mp-weixin_7Sz3ZS";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -9174,7 +9174,7 @@ const pages = [
     path: "pages/Front/HealthIndicatorList"
   },
   {
-    path: "pages/Templete/HealthIndicatorTypeList"
+    path: "pages/Front/HealthIndicatorTypeList"
   },
   {
     path: "pages/Front/CommHealthIndicatorTypeList"
@@ -9575,7 +9575,7 @@ function T(e2) {
 const b = true, E = "mp-weixin", A = T(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), P = E, C = T(""), O = T("[]") || [];
 let N = "";
 try {
-  N = "";
+  N = "__UNI__HealthControl";
 } catch (e2) {
 }
 let L = {};

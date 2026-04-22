@@ -8,7 +8,7 @@
     "pages/Front/PasswordEdit",
     "pages/Front/UserInfoEdit",
     "pages/Front/HealthIndicatorList",
-    "pages/Templete/HealthIndicatorTypeList",
+    "pages/Front/HealthIndicatorTypeList",
     "pages/Front/CommHealthIndicatorTypeList",
     "pages/Front/HealthIndicatorForm",
     "pages/Front/BatchRecordForm",
@@ -37,11 +37,21 @@
   "permission": {
     "scope.userLocation": {
       "desc": "你的位置信息将用于小程序位置接口的效果展示"
+    },
+    "scope.record": {
+      "desc": "你的麦克风将用于语音识别饮食记录"
+    }
+  },
+  "plugins": {
+    "WechatSI": {
+      "version": "0.3.5",
+      "provider": "wx069ba97219f66d99"
     }
   },
   "requiredPrivateInfos": [
     "getLocation",
-    "chooseLocation"
+    "chooseLocation",
+    "getRecorderManager"
   ],
   "usingComponents": {}
 }

@@ -9,4 +9,8 @@ public class VoiceFoodItemDto {
 
     private Integer count;
 
+    private String unitName;
+
+    private boolean matched;
+
 }

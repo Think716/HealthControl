@@ -1,5 +1,6 @@
 package com.example.web.controller;
 
+import com.example.web.dto.VoiceRecognizeRequestDto;
 import com.example.web.dto.VoiceRecognizeResponseDto;
 import com.example.web.service.VoiceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,5 +20,10 @@ public class VoiceController {
             @RequestParam("userId") Integer userId) {
 
         return voiceService.recognizeAndSave(userId, file);
+    }
+
+    @PostMapping("/recognize-text")
+    public VoiceRecognizeResponseDto recognizeText(@RequestBody VoiceRecognizeRequestDto requestDto) {
+        return voiceService.recognizeTextAndSave(requestDto);
     }
 }

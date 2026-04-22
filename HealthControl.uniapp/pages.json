@@ -8,7 +8,7 @@
     { "path": "pages/Front/PasswordEdit" },
     { "path": "pages/Front/UserInfoEdit" },
     { "path": "pages/Front/HealthIndicatorList" },
-    { "path": "pages/Templete/HealthIndicatorTypeList" },
+    { "path": "pages/Front/HealthIndicatorTypeList" },
     { "path": "pages/Front/CommHealthIndicatorTypeList" },
     { "path": "pages/Front/HealthIndicatorForm" },
     { "path": "pages/Front/BatchRecordForm" },

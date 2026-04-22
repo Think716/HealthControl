@@ -1,1 +1,2 @@
-<view><uni-nav-bar wx:if="{{b}}" bindclickLeft="{{a}}" u-i="0a350e28-0" bind:__l="__l" u-p="{{b}}"/></view>
+<!--pages/Templete/HealthIndicatorTypeList.wxml-->
+<text>pages/Templete/HealthIndicatorTypeList.wxml</text>

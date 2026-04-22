@@ -2,7 +2,7 @@
   "libVersion": "3.14.1",
   "projectname": "HealthControl.uniapp",
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "coverView": true,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,

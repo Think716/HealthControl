@@ -95,10 +95,6 @@
                         <view class="action-icon diet">🍎</view>
                         <text class="action-label">饮食记录</text>
                     </view>
-                    <view class="action-item" @click="ToSportRecord()">
-                        <view class="action-icon sport">🏃‍♂️</view>
-                        <text class="action-label">运动记录</text>
-                    </view>
 
                     <view class="action-item" @click="ToHealthNoticeList()">
                         <view class="action-icon reminder">⏰</view>
