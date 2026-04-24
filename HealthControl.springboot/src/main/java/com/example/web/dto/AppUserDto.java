@@ -76,23 +76,21 @@ public class AppUserDto extends BaseDto {
      */
     @JsonProperty("Gender")
     private String Gender;
+    /**
+     * 微信 openId
+     */
+    @JsonProperty("OpenId")
+    private String OpenId;
+    /**
+     * 微信登录code（用于换取openId）
+     */
+    @JsonProperty("WxCode")
+    private String WxCode;
 
     @JsonProperty("RoleTypeFormat")
     public String RoleTypeFormat() {
         return RoleTypeEnum.GetEnum(RoleType).toString();
     };
-
-    /**
-     * OpenId
-     */
-    @JsonProperty("OpenId")
-    private String OpenId;
-
-    /**
-     * wxcode
-     */
-    @JsonProperty("WxCode")
-    private String WxCode;
 
     /**
      * 把账号传输模型转换成账号实体

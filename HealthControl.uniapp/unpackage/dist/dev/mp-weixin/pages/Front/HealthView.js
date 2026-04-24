@@ -205,16 +205,39 @@ const _sfc_main = {
           indicatorNames.add(item.HealthIndicatorName);
         });
       });
-      const series = Array.from(indicatorNames).map((indicatorName, index) => {
+      const series = Array.from(indicatorNames).map((indicatorName) => {
         const data = sortedData.map((dateItem) => {
           const indicator = dateItem.Items.find((item) => item.HealthIndicatorName === indicatorName);
-          return indicator ? indicator.RecordValue : 0;
+          if (!indicator || indicator.RecordValue === null || indicator.RecordValue === void 0 || indicator.RecordValue === "") {
+            return null;
+          }
+          const value = parseFloat(indicator.RecordValue);
+          return Number.isNaN(value) ? null : value;
         });
         return {
           name: indicatorName,
           data
         };
       });
+      const validValues = series.flatMap((item) => item.data).filter((value) => value !== null && value !== void 0);
+      if (validValues.length > 0) {
+        const dataMin = Math.min(...validValues);
+        const dataMax = Math.max(...validValues);
+        const range = dataMax - dataMin;
+        const tofix = range < 1 ? 3 : range < 10 ? 2 : 1;
+        const padding = range === 0 ? Math.max(Math.abs(dataMax) * 0.1, 0.1) : Math.max(range * 0.2, 0.05);
+        chartOpts.value = {
+          ...chartOpts.value,
+          yAxis: {
+            ...chartOpts.value.yAxis,
+            data: [{
+              min: Number((dataMin - padding).toFixed(tofix)),
+              max: Number((dataMax + padding).toFixed(tofix)),
+              tofix
+            }]
+          }
+        };
+      }
       const colors = chartOpts.value.color;
       chartLegend.value = series.map((item, index) => ({
         name: item.name,

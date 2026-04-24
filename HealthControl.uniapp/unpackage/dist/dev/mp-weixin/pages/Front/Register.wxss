@@ -1,73 +1,73 @@
 
 /* 基础页面样式 */
-page {
-	background-color: white;
+page.data-v-95cbe21b {
+	background-color: #f8fffe;
 }
 
 /* 容器样式 */
-.login-container {
+.login-container.data-v-95cbe21b {
 	min-height: 100vh;
-	background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+	background: linear-gradient(135deg, #e8f8f5 0%, #f0fdf4 60%, #ffffff 100%);
 	position: relative;
 	overflow: hidden;
 }
 
 /* 背景装饰 */
-.bg-decoration {
+.bg-decoration.data-v-95cbe21b {
 	position: absolute;
 	width: 100%;
 	height: 100%;
 	pointer-events: none;
 }
-.circle {
+.circle.data-v-95cbe21b {
 	position: absolute;
 	border-radius: 50%;
 	opacity: 0.1;
 }
-.circle-1 {
+.circle-1.data-v-95cbe21b {
 	width: 600rpx;
 	height: 600rpx;
-	background: linear-gradient(45deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(45deg, #10b981, #34d399);
 	top: -200rpx;
 	right: -200rpx;
-	animation: float 8s ease-in-out infinite;
+	animation: float-95cbe21b 8s ease-in-out infinite;
 }
-.circle-2 {
+.circle-2.data-v-95cbe21b {
 	width: 400rpx;
 	height: 400rpx;
-	background: linear-gradient(45deg, #2b85e4, #2CC4F5);
+	background: linear-gradient(45deg, #34d399, #10b981);
 	bottom: -150rpx;
 	left: -150rpx;
-	animation: float 12s ease-in-out infinite;
+	animation: float-95cbe21b 12s ease-in-out infinite;
 }
-.circle-3 {
+.circle-3.data-v-95cbe21b {
 	width: 300rpx;
 	height: 300rpx;
-	background: linear-gradient(45deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(45deg, #10b981, #34d399);
 	top: 40%;
 	left: 60%;
-	animation: float 10s ease-in-out infinite;
+	animation: float-95cbe21b 10s ease-in-out infinite;
 }
 
 /* Logo 区域 */
-.logo-area {
+.logo-area.data-v-95cbe21b {
 	padding: 100rpx 0;
 	text-align: center;
 }
-.logo {
+.logo.data-v-95cbe21b {
 	width: 200rpx;
 	height: 200rpx;
 	margin-bottom: 30rpx;
 	filter: drop-shadow(0 8rpx 16rpx rgba(0, 0, 0, 0.1));
 }
-.welcome-text {
+.welcome-text.data-v-95cbe21b {
 	font-size: 40rpx;
 	color: #333;
 	font-weight: bold;
 	margin-bottom: 16rpx;
 	display: block;
 }
-.slogan {
+.slogan.data-v-95cbe21b {
 	font-size: 28rpx;
 	color: #666;
 	opacity: 0.8;
@@ -75,40 +75,44 @@ page {
 }
 
 /* 登录视图 */
-.login-view {
+.login-view.data-v-95cbe21b {
 	width: 100%;
 	position: relative;
 	margin-top: -120rpx;
-	background-color: #ffffff;
-	border-radius: 8% 8% 0% 0;
+	background-color: rgba(255,255,255,0.96);
+		border-radius: 48rpx 48rpx 0 0;
+		box-shadow: 0 -8rpx 24rpx rgba(16, 185, 129, 0.08);
 }
 
 /* 登录卡片 */
-.login-card {
+.login-card.data-v-95cbe21b {
 	padding: 60rpx 40rpx;
+	background: rgba(255,255,255,0.92);
+	border-radius: 24rpx;
 	margin: 40rpx 30rpx 0rpx;
+	box-shadow: 0 8rpx 24rpx rgba(15, 118, 110, 0.08);
 }
 
 /* 输入框组 */
-.input-group {
+.input-group.data-v-95cbe21b {
 	margin-bottom: 50rpx;
 	position: relative;
 	display: flex;
 	align-items: center;
 	padding: 0 20rpx;
 }
-.icon {
+.icon.data-v-95cbe21b {
 	font-size: 36rpx;
 	color: #999;
 	margin-right: 20rpx;
 }
-.custom-input {
+.custom-input.data-v-95cbe21b {
 	flex: 1;
 	height: 90rpx;
 	font-size: 32rpx;
 	background: transparent;
 }
-.input-line {
+.input-line.data-v-95cbe21b {
 	position: absolute;
 	bottom: -10rpx;
 	left: 0;
@@ -117,17 +121,17 @@ page {
 	background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
 	transition: all 0.3s;
 }
-.custom-input:focus+.input-line {
+.custom-input:focus+.input-line.data-v-95cbe21b {
 	height: 3rpx;
-	background: linear-gradient(90deg, transparent, #2CC4F5, transparent);
+	background: linear-gradient(90deg, transparent, #10b981, transparent);
 }
 
 /* 按钮样式 */
-.login-btn {
+.login-btn.data-v-95cbe21b {
 	position: relative;
 	width: 100%;
 	height: 90rpx;
-	background: linear-gradient(135deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(135deg, #10b981, #34d399);
 	border: none;
 	border-radius: 45rpx;
 	margin: 60rpx 0 30rpx;
@@ -136,17 +140,17 @@ page {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 15rpx 30rpx rgba(44, 196, 245, 0.3);
+	box-shadow: 0 15rpx 30rpx rgba(16, 185, 129, 0.25);
 	transition: transform 0.3s ease;
 }
-.btn-text {
+.btn-text.data-v-95cbe21b {
 	color: #ffffff;
 	font-size: 32rpx;
 	font-weight: 600;
 	letter-spacing: 4rpx;
 	z-index: 1;
 }
-.btn-wave {
+.btn-wave.data-v-95cbe21b {
 	position: absolute;
 	top: 0;
 	left: -100%;
@@ -157,23 +161,23 @@ page {
 			rgba(255, 255, 255, 0.3),
 			transparent);
 	transform: skewX(-15deg);
-	animation: wave 2s infinite;
+	animation: wave-95cbe21b 2s infinite;
 }
 
 /* 快捷操作区 */
-.quick-actions {
+.quick-actions.data-v-95cbe21b {
 	display: flex;
 	justify-content: center;
 	margin-top: 30rpx;
 	padding: 0 20rpx;
 }
-.register-link {
-	color: #2CC4F5;
+.register-link.data-v-95cbe21b {
+	color: #10b981;
 	font-size: 28rpx;
 }
 
 /* 动画关键帧 */
-@keyframes float {
+@keyframes float-95cbe21b {
 0%,
 	100% {
 		transform: translateY(0) rotate(0deg);
@@ -182,7 +186,7 @@ page {
 		transform: translateY(-20rpx) rotate(5deg);
 }
 }
-@keyframes wave {
+@keyframes wave-95cbe21b {
 0% {
 		left: -100%;
 }
@@ -191,16 +195,16 @@ page {
 		left: 100%;
 }
 }
-.animate-float {
-	animation: float 3s ease-in-out infinite;
+.animate-float.data-v-95cbe21b {
+	animation: float-95cbe21b 3s ease-in-out infinite;
 }
-.animate-fade-in {
-	animation: fadeIn 0.8s ease-out;
+.animate-fade-in.data-v-95cbe21b {
+	animation: fadeIn-95cbe21b 0.8s ease-out;
 }
-.animate-fade-in-delay {
-	animation: fadeIn 0.8s ease-out 0.3s backwards;
+.animate-fade-in-delay.data-v-95cbe21b {
+	animation: fadeIn-95cbe21b 0.8s ease-out 0.3s backwards;
 }
-@keyframes fadeIn {
+@keyframes fadeIn-95cbe21b {
 from {
 		opacity: 0;
 		transform: translateY(20rpx);

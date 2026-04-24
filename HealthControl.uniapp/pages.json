@@ -1,7 +1,7 @@
 {
   "pages": [
+	{ "path": "pages/Front/Login" },
     { "path": "pages/Front/Index" },
-    { "path": "pages/Front/Login" },
     { "path": "pages/Front/Register" },
     { "path": "pages/Front/ForgetPassword" },
     { "path": "pages/Front/UserCenter" },

@@ -31,7 +31,11 @@ const _sfc_main = {
     const portionPopup = common_vendor.ref(null);
     const selectedUnit = common_vendor.ref(null);
     const portionAmount = common_vendor.ref("");
-    const recordTime = common_vendor.ref((/* @__PURE__ */ new Date()).toISOString());
+    const formatRecordTimeForPicker = (date = /* @__PURE__ */ new Date()) => {
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+    const recordTime = common_vendor.ref(formatRecordTimeForPicker());
     const calculatedNutrition = common_vendor.ref(null);
     const isRecording = common_vendor.ref(false);
     const voiceText = common_vendor.ref("");
@@ -69,7 +73,7 @@ const _sfc_main = {
           foodLoadError.value = "食物列表为空，请先在后台维护食物数据";
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:237", "获取食物列表失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:241", "获取食物列表失败:", error);
         FoodTypeList.value = [];
         foodLoadError.value = "食物列表加载失败，请检查网络或服务";
       }
@@ -116,12 +120,14 @@ const _sfc_main = {
       portionPopup.value.open();
       portionAmount.value = "";
       calculatedNutrition.value = null;
+      recordTime.value = formatRecordTimeForPicker();
     };
     const closePortionPopup = () => {
       portionPopup.value.close();
       selectedUnit.value = null;
       portionAmount.value = "";
       calculatedNutrition.value = null;
+      recordTime.value = formatRecordTimeForPicker();
     };
     const onTimeChange = (e) => {
       recordTime.value = e.detail.value;
@@ -129,7 +135,7 @@ const _sfc_main = {
     const calculateNutrition = () => {
       if (!selectedUnit.value || !portionAmount.value || parseFloat(portionAmount.value) <= 0) {
         calculatedNutrition.value = null;
-        return;
+        return null;
       }
       const { food, unit } = selectedUnit.value;
       const amount = parseFloat(portionAmount.value);
@@ -140,20 +146,30 @@ const _sfc_main = {
         carbohydrates: (food.Carbohydrates * unitWeight * amount).toFixed(2),
         fat: (food.Fat * unitWeight * amount).toFixed(2)
       };
+      return calculatedNutrition.value;
     };
-    portionAmount.value && calculateNutrition();
+    common_vendor.watch([portionAmount, selectedUnit], () => {
+      calculateNutrition();
+    });
     const saveDietRecord = async () => {
       if (!canSave.value)
         return;
       common_vendor.index.showLoading({ title: "保存中..." });
       try {
-        const nutrition = calculatedNutrition.value || calculateNutrition();
-        const result = await utils_http.Post("/DietRecord/Add", {
+        const nutrition = calculateNutrition();
+        if (!nutrition) {
+          common_vendor.index.showToast({
+            title: "请先输入有效分量",
+            icon: "none"
+          });
+          return;
+        }
+        const result = await utils_http.Post("/DietRecord/CreateOrEdit", {
           UserId: UserId.value,
           FoodId: selectedUnit.value.food.Id,
           UnitId: selectedUnit.value.unit.Id,
           Amount: parseFloat(portionAmount.value),
-          RecordTime: utils_comm.GetFormatFullDate(new Date(recordTime.value)),
+          RecordTime: utils_comm.GetFormatFullDate(new Date(recordTime.value.replace(" ", "T"))),
           Calories: parseFloat(nutrition.calories),
           Protein: parseFloat(nutrition.protein),
           Carbohydrates: parseFloat(nutrition.carbohydrates),
@@ -172,12 +188,13 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.hideLoading();
         common_vendor.index.showToast({
-          title: "网络错误，请重试",
+          title: (error == null ? void 0 : error.Msg) || (error == null ? void 0 : error.message) || "网络错误，请重试",
           icon: "none"
         });
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:382", "保存饮食记录失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:399", "保存饮食记录失败:", error);
+      } finally {
+        common_vendor.index.hideLoading();
       }
     };
     const initVoicePlugin = () => {
@@ -198,14 +215,14 @@ const _sfc_main = {
         };
         manager.onError = (error) => {
           isRecording.value = false;
-          common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:408", "语音识别失败:", error);
+          common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:427", "语音识别失败:", error);
           common_vendor.index.showToast({
             title: "语音识别失败，请重试",
             icon: "none"
           });
         };
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:415", "初始化微信语音插件失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:434", "初始化微信语音插件失败:", error);
       }
     };
     const toggleVoiceRecording = () => {
@@ -252,7 +269,7 @@ const _sfc_main = {
         }
         common_vendor.index.showToast({ title: "未匹配到食物，请更换描述", icon: "none" });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:480", "语音记录保存失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:499", "语音记录保存失败:", error);
         common_vendor.index.showToast({ title: "保存失败，请稍后重试", icon: "none" });
       } finally {
         common_vendor.index.hideLoading();

@@ -103,18 +103,26 @@ public class DietRecordServiceImpl extends ServiceImpl<DietRecordMapper, DietRec
             FoodUnit FoodUnitEntity = FoodUnitMapper.selectById(item.getFoodUnitId());
             item.setFoodUnitDto(FoodUnitEntity != null ? FoodUnitEntity.MapToDto() : new FoodUnitDto());
 
-            item.getFoodUnitDto().setProtein(
-                    Extension.ToFixed4(item.getFoodDto().getProtein() * item.getFoodUnitDto().getUnitValue()));
-            item.getFoodUnitDto().setCarbohydrates(
-                    Extension.ToFixed4(item.getFoodDto().getCarbohydrates() * item.getFoodUnitDto().getUnitValue()));
-            item.getFoodUnitDto()
-                    .setFat(Extension.ToFixed4(item.getFoodDto().getFat() * item.getFoodUnitDto().getUnitValue()));
-            item.getFoodUnitDto().setCalories(
-                    Extension.ToFixed4(item.getFoodDto().getCalories() * item.getFoodUnitDto().getUnitValue()));
+            double unitValue = safeNumber(item.getFoodUnitDto().getUnitValue());
+            double protein = safeNumber(item.getFoodDto().getProtein());
+            double carbohydrates = safeNumber(item.getFoodDto().getCarbohydrates());
+            double fat = safeNumber(item.getFoodDto().getFat());
+            double calories = safeNumber(item.getFoodDto().getCalories());
 
+            item.getFoodUnitDto().setProtein(Extension.ToFixed4(protein * unitValue));
+            item.getFoodUnitDto().setCarbohydrates(Extension.ToFixed4(carbohydrates * unitValue));
+            item.getFoodUnitDto().setFat(Extension.ToFixed4(fat * unitValue));
+            item.getFoodUnitDto().setCalories(Extension.ToFixed4(calories * unitValue));
         }
 
         return items;
+    }
+
+    /**
+     * 防止空值参与运算导致系统异常
+     */
+    private double safeNumber(Number value) {
+        return value == null ? 0d : value.doubleValue();
     }
 
     /**

@@ -49,6 +49,53 @@ const _sfc_main = {
         IsAbnormity: false
       }));
     };
+    const BMI_KEYWORDS = ["bmi", "体质指数"];
+    const HEIGHT_KEYWORDS = ["身高"];
+    const WEIGHT_KEYWORDS = ["体重"];
+    const hasKeyword = (name, keywords) => {
+      const text = String(name || "").toLowerCase();
+      return keywords.some((keyword) => text.includes(String(keyword).toLowerCase()));
+    };
+    const findIndicatorIndexByKeywords = (keywords) => {
+      return indicatorList.value.findIndex((item) => hasKeyword(item == null ? void 0 : item.Name, keywords));
+    };
+    const parseMetricHeight = (rawValue) => {
+      const height = parseFloat(rawValue);
+      if (!height || height <= 0)
+        return null;
+      return height > 3 ? height / 100 : height;
+    };
+    const syncBMIFromHeightWeight = () => {
+      const heightIndex = findIndicatorIndexByKeywords(HEIGHT_KEYWORDS);
+      const weightIndex = findIndicatorIndexByKeywords(WEIGHT_KEYWORDS);
+      const bmiIndex = findIndicatorIndexByKeywords(BMI_KEYWORDS);
+      if (heightIndex < 0 || weightIndex < 0 || bmiIndex < 0)
+        return;
+      const heightRecord = recordData.value[heightIndex];
+      const weightRecord = recordData.value[weightIndex];
+      const bmiRecord = recordData.value[bmiIndex];
+      const heightInMeter = parseMetricHeight(heightRecord == null ? void 0 : heightRecord.RecordValue);
+      const weight = parseFloat(weightRecord == null ? void 0 : weightRecord.RecordValue);
+      if (!heightInMeter || !weight || weight <= 0) {
+        bmiRecord.RecordValue = "";
+        bmiRecord.IsAbnormity = false;
+        return;
+      }
+      const bmi = weight / (heightInMeter * heightInMeter);
+      bmiRecord.RecordValue = bmi.toFixed(2);
+      if (!bmiRecord.RecordTime) {
+        bmiRecord.RecordTime = utils_comm.GetFormatFullDate(/* @__PURE__ */ new Date());
+      }
+      checkAbnormity(bmiIndex);
+    };
+    const handleRecordInput = (index) => {
+      var _a;
+      checkAbnormity(index);
+      const indicatorName = (_a = indicatorList.value[index]) == null ? void 0 : _a.Name;
+      if (hasKeyword(indicatorName, HEIGHT_KEYWORDS) || hasKeyword(indicatorName, WEIGHT_KEYWORDS)) {
+        syncBMIFromHeightWeight();
+      }
+    };
     const checkAbnormity = (index) => {
       const record = recordData.value[index];
       const indicator = indicatorList.value[index];
@@ -128,7 +175,7 @@ const _sfc_main = {
         }
       } catch (error) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/Front/BatchRecordForm.vue:233", "提交失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/BatchRecordForm.vue:291", "提交失败:", error);
         common_vendor.index.showToast({
           title: "提交失败",
           icon: "error"
@@ -173,7 +220,7 @@ const _sfc_main = {
             f: common_vendor.t(indicator.HealthIndicatorTypeName),
             g: common_vendor.t(indicator.Threshold),
             h: common_vendor.t(indicator.Content),
-            i: common_vendor.o([($event) => recordData.value[index].RecordValue = $event.detail.value, ($event) => checkAbnormity(index)], indicator.Id),
+            i: common_vendor.o([($event) => recordData.value[index].RecordValue = $event.detail.value, ($event) => handleRecordInput(index)], indicator.Id),
             j: recordData.value[index].RecordValue,
             k: common_vendor.t(getUnit(indicator.Threshold)),
             l: common_vendor.t(formatDateTime(recordData.value[index].RecordTime) || "点击选择时间"),

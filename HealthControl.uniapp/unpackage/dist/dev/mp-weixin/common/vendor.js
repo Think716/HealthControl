@@ -7394,9 +7394,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "10.64.129.158,127.0.0.1";
+  const hosts = "10.64.8.162,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_7Sz3ZS";
+  const id = "mp-weixin_Jm5f7w";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -9150,10 +9150,10 @@ const onPageScroll = /* @__PURE__ */ createLifeCycleHook(
 );
 const pages = [
   {
-    path: "pages/Front/Index"
+    path: "pages/Front/Login"
   },
   {
-    path: "pages/Front/Login"
+    path: "pages/Front/Index"
   },
   {
     path: "pages/Front/Register"

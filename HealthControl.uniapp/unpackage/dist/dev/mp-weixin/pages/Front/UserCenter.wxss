@@ -5,6 +5,12 @@
  以下变量是默认值，如不需要修改可以不用给下面的变量重新赋值
  */
 /* 水平间距 */
+/* 页面容器，预留底部导航高度，避免退出按钮被遮挡 */
+.user-center-page.data-v-937a22e8 {
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
 /* 用户信息卡片样式 */
 .user-info-card.data-v-937a22e8 {
   display: flex;
@@ -121,6 +127,7 @@
 /* 退出按钮样式 */
 .logout-button.data-v-937a22e8 {
   width: 90%;
+  display: block;
   height: 90rpx;
   line-height: 90rpx;
   margin: 60rpx auto;

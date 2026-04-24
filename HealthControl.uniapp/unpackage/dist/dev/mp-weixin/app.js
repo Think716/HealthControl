@@ -3,8 +3,8 @@ Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const common_vendor = require("./common/vendor.js");
 const store_index = require("./store/index.js");
 if (!Math) {
-  "./pages/Front/Index.js";
   "./pages/Front/Login.js";
+  "./pages/Front/Index.js";
   "./pages/Front/Register.js";
   "./pages/Front/ForgetPassword.js";
   "./pages/Front/UserCenter.js";
@@ -41,6 +41,9 @@ const _sfc_main = {
     common_vendor.onLaunch(() => {
       if (commonStore.Token) {
         commonStore.GetInfo();
+        common_vendor.index.reLaunch({ url: "/pages/Front/Index" });
+      } else {
+        common_vendor.index.reLaunch({ url: "/pages/Front/Login" });
       }
     });
     common_vendor.onShow(() => {

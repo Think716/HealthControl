@@ -38,7 +38,6 @@ const _sfc_main = {
       { id: "overview", name: "总评", emoji: "🎯" },
       { id: "risks", name: "风险", emoji: "⚠️" },
       { id: "nutrition", name: "营养", emoji: "🥗" },
-      { id: "sport", name: "运动", emoji: "🏃‍♂️" },
       { id: "indicators", name: "指标", emoji: "📊" },
       { id: "recommendations", name: "建议", emoji: "💡" }
     ]);
@@ -79,7 +78,54 @@ const _sfc_main = {
         }, 200);
       }
     });
+    const getDefaultAnalysisResult = () => ({
+      OverallHealthScore: 0,
+      HealthLevel: "待评估",
+      Summary: "暂无分析摘要",
+      HealthRisks: [],
+      NutritionAnalysis: {
+        NutritionBalanceScore: 0,
+        CalorieIntakeAssessment: "暂无数据",
+        ProteinAssessment: "暂无数据",
+        CarbohydrateAssessment: "暂无数据",
+        FatAssessment: "暂无数据",
+        DietaryRecommendations: []
+      },
+      IndicatorAnalyses: [],
+      Recommendations: []
+    });
+    const EXCLUDED_KEYWORDS = ["运动", "血糖", "血氧", "肺活量", "游离三碘甲状腺氨基酸", "游离三碘甲状腺原氨酸", "FT3"];
+    const shouldExcludeText = (...texts) => {
+      const merged = texts.filter(Boolean).join("");
+      return EXCLUDED_KEYWORDS.some((keyword) => merged.includes(keyword));
+    };
+    const filterAnalysisItems = (result) => ({
+      ...result,
+      HealthRisks: result.HealthRisks.filter((risk) => !shouldExcludeText(risk == null ? void 0 : risk.RiskType, risk == null ? void 0 : risk.Description, risk == null ? void 0 : risk.Suggestions)),
+      IndicatorAnalyses: result.IndicatorAnalyses.filter((indicator) => !shouldExcludeText(indicator == null ? void 0 : indicator.IndicatorName)),
+      Recommendations: result.Recommendations.filter((item) => !shouldExcludeText(item == null ? void 0 : item.RecommendationType, item == null ? void 0 : item.Title, item == null ? void 0 : item.Content))
+    });
+    const normalizeAnalysisResult = (result) => {
+      var _a;
+      const fallback = getDefaultAnalysisResult();
+      if (!result || typeof result !== "object")
+        return fallback;
+      const normalized = {
+        ...fallback,
+        ...result,
+        HealthRisks: Array.isArray(result.HealthRisks) ? result.HealthRisks : [],
+        NutritionAnalysis: {
+          ...fallback.NutritionAnalysis,
+          ...result.NutritionAnalysis || {},
+          DietaryRecommendations: Array.isArray((_a = result.NutritionAnalysis) == null ? void 0 : _a.DietaryRecommendations) ? result.NutritionAnalysis.DietaryRecommendations : []
+        },
+        IndicatorAnalyses: Array.isArray(result.IndicatorAnalyses) ? result.IndicatorAnalyses : [],
+        Recommendations: Array.isArray(result.Recommendations) ? result.Recommendations : []
+      };
+      return filterAnalysisItems(normalized);
+    };
     const getAiAnalyseApi = async () => {
+      var _a;
       try {
         loading.value = true;
         error.value = false;
@@ -88,15 +134,15 @@ const _sfc_main = {
           UserId: UserId.value,
           Days: 7
         });
-        Data.value = response.Data;
-        analysisResult.value = response.Data.AnalysisResult;
+        Data.value = (response == null ? void 0 : response.Data) || {};
+        analysisResult.value = normalizeAnalysisResult((_a = response == null ? void 0 : response.Data) == null ? void 0 : _a.AnalysisResult);
         await common_vendor.nextTick$1();
         setTimeout(() => {
           calculateSectionPositions();
         }, 100);
       } catch (err) {
         error.value = true;
-        common_vendor.index.__f__("error", "at pages/Front/AiAnalyse.vue:358", "AI分析失败:", err);
+        common_vendor.index.__f__("error", "at pages/Front/AiAnalyse.vue:372", "AI分析失败:", err);
         common_vendor.index.showToast({
           title: "分析失败，请稍后重试",
           icon: "error"
@@ -140,7 +186,11 @@ const _sfc_main = {
       return "primary";
     };
     const formatAnalysisTime = (timeString) => {
+      if (!timeString)
+        return "暂无时间";
       const date = new Date(timeString);
+      if (Number.isNaN(date.getTime()))
+        return "暂无时间";
       return date.toLocaleString("zh-CN", {
         year: "numeric",
         month: "2-digit",
@@ -150,31 +200,20 @@ const _sfc_main = {
       });
     };
     const getRiskEmoji = (riskType) => {
-      if (riskType.includes("体重"))
+      const type = String(riskType || "");
+      if (type.includes("体重"))
         return "⚖️";
-      if (riskType.includes("血糖"))
-        return "🩸";
-      if (riskType.includes("营养"))
+      if (type.includes("营养"))
         return "🥗";
-      if (riskType.includes("运动"))
-        return "🏃‍♂️";
-      if (riskType.includes("心血管"))
+      if (type.includes("心血管"))
         return "❤️";
-      return "⚠️";
     };
     const getIndicatorEmoji = (indicatorName) => {
-      if (indicatorName.includes("体重"))
+      const name = String(indicatorName || "");
+      if (name.includes("体重"))
         return "⚖️";
-      if (indicatorName.includes("血糖"))
-        return "🩸";
-      if (indicatorName.includes("血氧"))
-        return "🩸";
-      if (indicatorName.includes("肺活量"))
-        return "💨";
-      if (indicatorName.includes("体温"))
+      if (name.includes("体温"))
         return "🌡️";
-      if (indicatorName.includes("甲状腺"))
-        return "🦋";
       return "📊";
     };
     const getRecommendationEmoji = (recommendationType) => {
@@ -182,8 +221,6 @@ const _sfc_main = {
         return "🏥";
       if (recommendationType === "饮食")
         return "🍽️";
-      if (recommendationType === "运动")
-        return "🏃‍♂️";
       if (recommendationType === "生活习惯")
         return "🏡";
       return "💡";
@@ -210,7 +247,7 @@ const _sfc_main = {
       if (!analysisResult.value)
         return;
       await common_vendor.nextTick$1();
-      const sectionIds = ["overview", "risks", "nutrition", "sport", "indicators", "recommendations"];
+      const sectionIds = ["overview", "risks", "nutrition", "indicators", "recommendations"];
       const positions = [];
       return new Promise((resolve) => {
         let completed = 0;
@@ -252,6 +289,7 @@ const _sfc_main = {
       }
     };
     return (_ctx, _cache) => {
+      var _a;
       return common_vendor.e({
         a: common_vendor.o(goBack),
         b: common_vendor.p({
@@ -312,19 +350,7 @@ const _sfc_main = {
             c: index
           };
         }),
-        t: analysisResult.value.SportAnalysis.ExerciseFrequencyScore + "%",
-        v: common_vendor.t(analysisResult.value.SportAnalysis.ExerciseFrequencyScore),
-        w: common_vendor.t(analysisResult.value.SportAnalysis.ExerciseVolumeAssessment),
-        x: common_vendor.t(analysisResult.value.SportAnalysis.CaloriesBurnedAssessment),
-        y: common_vendor.t(analysisResult.value.SportAnalysis.ExerciseVarietyAssessment),
-        z: common_vendor.f(analysisResult.value.SportAnalysis.ExerciseRecommendations, (recommendation, index, i0) => {
-          return {
-            a: common_vendor.t(index + 1),
-            b: common_vendor.t(recommendation),
-            c: index
-          };
-        }),
-        A: common_vendor.f(analysisResult.value.IndicatorAnalyses, (indicator, index, i0) => {
+        t: common_vendor.f(analysisResult.value.IndicatorAnalyses, (indicator, index, i0) => {
           return {
             a: common_vendor.t(getIndicatorEmoji(indicator.IndicatorName)),
             b: common_vendor.t(indicator.IndicatorName),
@@ -341,7 +367,7 @@ const _sfc_main = {
             i: index
           };
         }),
-        B: common_vendor.f(analysisResult.value.Recommendations, (recommendation, index, i0) => {
+        v: common_vendor.f(analysisResult.value.Recommendations, (recommendation, index, i0) => {
           return {
             a: common_vendor.t(getRecommendationEmoji(recommendation.RecommendationType)),
             b: common_vendor.t(recommendation.Title),
@@ -357,17 +383,17 @@ const _sfc_main = {
             h: index
           };
         }),
-        C: common_vendor.t(formatAnalysisTime(Data.value.AnalysisTime))
+        w: common_vendor.t(formatAnalysisTime((_a = Data.value) == null ? void 0 : _a.AnalysisTime))
       } : error.value ? {
-        E: common_vendor.p({
+        y: common_vendor.p({
           type: "info",
           size: "60",
           color: "#ff6b6b"
         }),
-        F: common_vendor.o(getAiAnalyseApi)
+        z: common_vendor.o(getAiAnalyseApi)
       } : {}, {
         g: analysisResult.value,
-        D: error.value
+        x: error.value
       });
     };
   }

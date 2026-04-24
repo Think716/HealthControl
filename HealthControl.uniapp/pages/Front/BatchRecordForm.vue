@@ -45,7 +45,7 @@
                             <view class="input-label">测量值</view>
                             <view class="input-wrapper">
                                 <input type="number" class="data-input" placeholder="请输入测量值"
-                                    v-model="recordData[index].RecordValue" @input="checkAbnormity(index)" />
+                                    v-model="recordData[index].RecordValue" @input="handleRecordInput(index)" />
                                 <view class="unit-text">{{ getUnit(indicator.Threshold) }}</view>
                             </view>
                         </view>
@@ -127,6 +127,64 @@ const initRecordData = () => {
         RecordValue: '',
         IsAbnormity: false
     }));
+};
+const BMI_KEYWORDS = ['bmi', '体质指数'];
+const HEIGHT_KEYWORDS = ['身高'];
+const WEIGHT_KEYWORDS = ['体重'];
+
+const hasKeyword = (name, keywords) => {
+    const text = String(name || '').toLowerCase();
+    return keywords.some(keyword => text.includes(String(keyword).toLowerCase()));
+};
+
+const findIndicatorIndexByKeywords = (keywords) => {
+    return indicatorList.value.findIndex(item => hasKeyword(item?.Name, keywords));
+};
+
+const parseMetricHeight = (rawValue) => {
+    const height = parseFloat(rawValue);
+    if (!height || height <= 0) return null;
+    return height > 3 ? height / 100 : height;
+};
+
+const syncBMIFromHeightWeight = () => {
+    const heightIndex = findIndicatorIndexByKeywords(HEIGHT_KEYWORDS);
+    const weightIndex = findIndicatorIndexByKeywords(WEIGHT_KEYWORDS);
+    const bmiIndex = findIndicatorIndexByKeywords(BMI_KEYWORDS);
+
+    if (heightIndex < 0 || weightIndex < 0 || bmiIndex < 0) return;
+
+    const heightRecord = recordData.value[heightIndex];
+    const weightRecord = recordData.value[weightIndex];
+    const bmiRecord = recordData.value[bmiIndex];
+
+    const heightInMeter = parseMetricHeight(heightRecord?.RecordValue);
+    const weight = parseFloat(weightRecord?.RecordValue);
+
+    if (!heightInMeter || !weight || weight <= 0) {
+        bmiRecord.RecordValue = '';
+        bmiRecord.IsAbnormity = false;
+        return;
+    }
+
+    const bmi = weight / (heightInMeter * heightInMeter);
+    bmiRecord.RecordValue = bmi.toFixed(2);
+
+    // BMI自动填充时同步记录时间
+    if (!bmiRecord.RecordTime) {
+        bmiRecord.RecordTime = GetFormatFullDate(new Date());
+    }
+
+    checkAbnormity(bmiIndex);
+};
+
+const handleRecordInput = (index) => {
+    checkAbnormity(index);
+
+    const indicatorName = indicatorList.value[index]?.Name;
+    if (hasKeyword(indicatorName, HEIGHT_KEYWORDS) || hasKeyword(indicatorName, WEIGHT_KEYWORDS)) {
+        syncBMIFromHeightWeight();
+    }
 };
 
 // 检查异常状态

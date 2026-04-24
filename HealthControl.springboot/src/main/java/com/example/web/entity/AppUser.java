@@ -23,6 +23,7 @@ public class AppUser extends BaseEntity {
     @JsonProperty("UserName")
     @TableField(value = "UserName", updateStrategy = FieldStrategy.IGNORED)
     private String UserName;
+
     /**
      * 密码
      */
@@ -36,24 +37,28 @@ public class AppUser extends BaseEntity {
     @JsonProperty("Email")
     @TableField(value = "Email", updateStrategy = FieldStrategy.IGNORED)
     private String Email;
+
     /**
      * 头像
      */
     @JsonProperty("ImageUrls")
     @TableField(value = "ImageUrls", updateStrategy = FieldStrategy.IGNORED)
     private String ImageUrls;
+
     /**
      * 名称
      */
     @JsonProperty("Name")
     @TableField(value = "Name", updateStrategy = FieldStrategy.IGNORED)
     private String Name;
+
     /**
      * 手机号码
      */
     @JsonProperty("PhoneNumber")
     @TableField(value = "PhoneNumber", updateStrategy = FieldStrategy.IGNORED)
     private String PhoneNumber;
+
     /**
      * 出生年月
      */
@@ -76,7 +81,7 @@ public class AppUser extends BaseEntity {
     private String Gender;
 
     /**
-     * OpenId
+     * 微信 openId（新增）
      */
     @JsonProperty("OpenId")
     @TableField(value = "OpenId", updateStrategy = FieldStrategy.IGNORED)
@@ -86,9 +91,8 @@ public class AppUser extends BaseEntity {
      * 把账号实体转换成账号传输模型
      */
     public AppUserDto MapToDto() throws InvocationTargetException, IllegalAccessException {
-        AppUserDto AppUserDto = new AppUserDto();
-        BeanUtils.copyProperties(AppUserDto, this);
-        return AppUserDto;
+        AppUserDto dto = new AppUserDto();
+        BeanUtils.copyProperties(dto, this);
+        return dto;
     }
-
 }

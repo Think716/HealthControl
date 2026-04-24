@@ -3,7 +3,6 @@ package com.example.web.tools;
 import com.example.web.SysConst;
 import com.example.web.tools.dto.ResponseData;
 import com.example.web.tools.exception.CustomException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -21,19 +20,6 @@ public class GlobalExceptionHandler {
         ResponseData responseData = new ResponseData();
         responseData.setCode(SysConst.STATUS_500);
         responseData.setMsg(e.getErrorMsg());
-        responseData.setSuccess(false);
-        return responseData;
-    }
-
-    /**
-     * 处理静态资源不存在异常，避免落到通用异常并打印整段堆栈
-     */
-    @ExceptionHandler(value = NoResourceFoundException.class)
-    @ResponseBody
-    public ResponseData noResourceExceptionHandler(NoResourceFoundException e) {
-        ResponseData responseData = new ResponseData();
-        responseData.setCode("404");
-        responseData.setMsg(e.getMessage());
         responseData.setSuccess(false);
         return responseData;
     }

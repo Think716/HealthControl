@@ -1,7 +1,7 @@
 {
   "pages": [
-    "pages/Front/Index",
     "pages/Front/Login",
+    "pages/Front/Index",
     "pages/Front/Register",
     "pages/Front/ForgetPassword",
     "pages/Front/UserCenter",

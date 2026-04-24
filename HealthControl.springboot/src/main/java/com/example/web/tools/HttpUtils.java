@@ -48,11 +48,11 @@ public   class HttpUtils {
 
         // 创建Post请求
         HttpPost httpPost = new HttpPost(url);
-      
-      ObjectMapper mapper = new ObjectMapper();
+
+        ObjectMapper mapper = new ObjectMapper();
 //       mapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
-       String jsonString = mapper.writeValueAsString(bodyData);
-      // String jsonString =   JSONObject.valueToString(bodyData);
+        String jsonString = mapper.writeValueAsString(bodyData);
+        // String jsonString =   JSONObject.valueToString(bodyData);
         StringEntity entity = new StringEntity(jsonString, "UTF-8");
 
         // post请求是将参数放在请求体里面传过去的;这里将entity放入post请求体中

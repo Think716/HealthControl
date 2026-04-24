@@ -8,6 +8,9 @@ onLaunch(() => {
 
     if (commonStore.Token) {
         commonStore.GetInfo();
+		uni.reLaunch({ url: "/pages/Front/Index" });
+		    } else {
+		        uni.reLaunch({ url: "/pages/Front/Login" });
     }
 });
 onShow(() => {

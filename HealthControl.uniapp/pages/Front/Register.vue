@@ -248,8 +248,8 @@ page {
 	position: relative;
 	margin-top: -120upx;
 	background-color: rgba(255,255,255,0.96);
-	border-radius: 48rpx 48rpx 0 0;
-	box-shadow: 0 -8rpx 24rpx rgba(16, 185, 129, 0.08);
+		border-radius: 48rpx 48rpx 0 0;
+		box-shadow: 0 -8rpx 24rpx rgba(16, 185, 129, 0.08);
 }
 
 /* 登录卡片 */

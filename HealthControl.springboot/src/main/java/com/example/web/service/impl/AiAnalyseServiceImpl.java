@@ -55,7 +55,6 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
     private FoodUnitMapper foodUnitMapper;
 
 
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -237,8 +236,6 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
                     .collect(Collectors.toList());
             requestDto.setDietRecords(dietData);
         }
-
-
         return requestDto;
     }
 
