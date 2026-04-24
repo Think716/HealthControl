@@ -217,9 +217,12 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         for (DietRecord record : dietRecords) {
+            if (record.getRecordTime() == null || record.getRecordValue() == null) {
+                continue;
+            }
             String date = record.getRecordTime().format(formatter);
             Food food = foodMapper.selectById(record.getFoodId());
-            if (food != null) {
+            if (food != null && food.getCalories() != null) {
                 double calories = food.getCalories() * record.getRecordValue();
                 dailyCalories.put(date, dailyCalories.getOrDefault(date, 0.0) + calories);
             }
