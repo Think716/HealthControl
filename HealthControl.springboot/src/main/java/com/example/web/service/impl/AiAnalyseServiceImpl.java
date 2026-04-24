@@ -59,32 +59,11 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
 
             String prompt = buildAnalysisPrompt(requestDto, score);
 
-            String aiResult = deepSeekApiClient.analyzeHealth(prompt);
+            AiHealthAnalysisResponseDto response = deepSeekApiClient.analyzeHealth(prompt);
 
-            if (aiResult == null || aiResult.trim().isEmpty()) {
+            if (response == null) {
                 return buildErrorResponse("AI返回为空");
             }
-
-            // 🔥 关键修复：解析 DeepSeek 嵌套结构
-            String contentJson = extractContent(aiResult);
-
-            AiHealthAnalysisResponseDto.AnalysisResult result;
-
-            try {
-                result = objectMapper.readValue(
-                        contentJson,
-                        AiHealthAnalysisResponseDto.AnalysisResult.class
-                );
-            } catch (Exception e) {
-                log.error("JSON解析失败：{}", contentJson);
-
-                result = buildFallbackResult(score);
-            }
-
-            AiHealthAnalysisResponseDto response = new AiHealthAnalysisResponseDto();
-            response.setSuccess(true);
-            response.setAnalysisResult(result);
-            response.setAnalysisTime(LocalDateTime.now());
 
             return response;
 
