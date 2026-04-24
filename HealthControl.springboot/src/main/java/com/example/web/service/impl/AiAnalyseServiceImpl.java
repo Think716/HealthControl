@@ -1,14 +1,12 @@
 package com.example.web.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.example.web.dto.*;
 import com.example.web.entity.*;
 import com.example.web.mapper.*;
 import com.example.web.service.AiAnalyseService;
 import com.example.web.tools.DeepSeekApiClient;
-import com.example.web.tools.Extension;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +15,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * AI分析服务实现
- */
 @Slf4j
 @Service
 public class AiAnalyseServiceImpl implements AiAnalyseService {
@@ -34,291 +30,225 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
     private AppUserMapper appUserMapper;
 
     @Autowired
-    private HealthIndicatorRecordMapper healthIndicatorRecordMapper;
-
-    @Autowired
-    private HealthIndicatorMapper healthIndicatorMapper;
-
-    @Autowired
-    private HealthIndicatorTypeMapper healthIndicatorTypeMapper;
-
-    @Autowired
     private DietRecordMapper dietRecordMapper;
 
     @Autowired
     private FoodMapper foodMapper;
 
     @Autowired
-    private FoodTypeMapper foodTypeMapper;
-
-    @Autowired
     private FoodUnitMapper foodUnitMapper;
-
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public AiHealthAnalysisResponseDto analyzeUserHealth(Integer userId, Integer days) {
         try {
-            // 获取用户数据
             AiHealthAnalysisRequestDto requestDto = buildUserHealthData(userId, days);
-
-            // 调用分析方法
             return analyzeHealthData(requestDto);
-
         } catch (Exception e) {
-            log.error("分析用户健康数据失败, userId: {}", userId, e);
-            return buildErrorResponse("数据获取失败: " + e.getMessage());
+            log.error("分析失败 userId={}", userId, e);
+            return buildErrorResponse("数据获取失败：" + e.getMessage());
         }
     }
 
     @Override
     public AiHealthAnalysisResponseDto analyzeHealthData(AiHealthAnalysisRequestDto requestDto) {
         try {
-            // 构建分析提示词
-            String prompt = buildAnalysisPrompt(requestDto);
 
-            // 调用DeepSeek API
+            int score = calculateScore(requestDto);
+
+            String prompt = buildAnalysisPrompt(requestDto, score);
+
             String aiResult = deepSeekApiClient.analyzeHealth(prompt);
 
             if (aiResult == null || aiResult.trim().isEmpty()) {
-                return buildErrorResponse("AI分析失败，请稍后重试");
+                return buildErrorResponse("AI返回为空");
             }
 
-            // 解析AI返回的JSON结果
-            AiHealthAnalysisResponseDto.AnalysisResult analysisResult = objectMapper.readValue(aiResult,
-                    AiHealthAnalysisResponseDto.AnalysisResult.class);
+            // 🔥 关键修复：解析 DeepSeek 嵌套结构
+            String contentJson = extractContent(aiResult);
 
-            // 构建响应
+            AiHealthAnalysisResponseDto.AnalysisResult result;
+
+            try {
+                result = objectMapper.readValue(
+                        contentJson,
+                        AiHealthAnalysisResponseDto.AnalysisResult.class
+                );
+            } catch (Exception e) {
+                log.error("JSON解析失败：{}", contentJson);
+
+                result = buildFallbackResult(score);
+            }
+
             AiHealthAnalysisResponseDto response = new AiHealthAnalysisResponseDto();
             response.setSuccess(true);
-            response.setAnalysisResult(analysisResult);
+            response.setAnalysisResult(result);
             response.setAnalysisTime(LocalDateTime.now());
 
             return response;
 
         } catch (Exception e) {
-            log.error("AI健康分析失败", e);
-            return buildErrorResponse("AI分析失败: " + e.getMessage());
+            log.error("AI分析异常", e);
+            return buildErrorResponse("AI分析失败：" + e.getMessage());
         }
     }
 
-    /**
-     * 构建用户健康数据
-     */
+    // ================= 核心修复：DeepSeek解析 =================
+    private String extractContent(String aiResult) {
+        try {
+            JsonNode root = objectMapper.readTree(aiResult);
+            return root.path("choices")
+                    .get(0)
+                    .path("message")
+                    .path("content")
+                    .asText();
+        } catch (Exception e) {
+            log.error("提取content失败，直接返回原数据");
+            return aiResult;
+        }
+    }
+
+    // ================= 评分优化 =================
+    private int calculateScore(AiHealthAnalysisRequestDto dto) {
+
+        double calories = 0;
+        double protein = 0;
+        double fat = 0;
+
+        if (dto.getDietRecords() != null) {
+            for (AiHealthAnalysisRequestDto.DietData d : dto.getDietRecords()) {
+                calories += safe(d.getCalories());
+                protein += safe(d.getProtein());
+                fat += safe(d.getFat());
+            }
+        }
+
+        int score = 100;
+
+        if (calories > 2400) score -= 15;
+        if (calories < 1500) score -= 10;
+        if (fat > 90) score -= 15;
+        if (protein < 45) score -= 10;
+
+        return Math.max(score, 0);
+    }
+
+    private double safe(Number v) {
+        return v == null ? 0 : v.doubleValue();
+    }
+
+    // ================= Prompt强化 =================
+    private String buildAnalysisPrompt(AiHealthAnalysisRequestDto dto, int score) {
+
+        double cal = 0, p = 0, f = 0, c = 0;
+
+        if (dto.getDietRecords() != null) {
+            for (AiHealthAnalysisRequestDto.DietData d : dto.getDietRecords()) {
+                cal += safe(d.getCalories());
+                p += safe(d.getProtein());
+                f += safe(d.getFat());
+                c += safe(d.getCarbohydrates());
+            }
+        }
+
+        return """
+你是专业营养分析AI，只能输出JSON，禁止任何解释文字。
+
+数据：
+热量:%f
+蛋白质:%f
+脂肪:%f
+碳水:%f
+评分:%d
+
+必须严格返回：
+
+{
+  "score": %d,
+  "evaluation": "良好|一般|较差",
+  "problems": ["问题1"],
+  "suggestions": ["建议1"]
+}
+""".formatted(cal, p, f, c, score, score);
+    }
+
+    // ================= 构建数据 =================
     private AiHealthAnalysisRequestDto buildUserHealthData(Integer userId, Integer days) {
-        if (days == null || days <= 0) {
-            days = 7; // 默认7天
-        }
 
-        LocalDateTime endTime = LocalDateTime.now();
-        LocalDateTime startTime = endTime.minusDays(days);
+        if (days == null || days <= 0) days = 7;
 
-        AiHealthAnalysisRequestDto requestDto = new AiHealthAnalysisRequestDto();
-        requestDto.setUserId(userId);
-        requestDto.setStartTime(startTime);
-        requestDto.setEndTime(endTime);
+        LocalDateTime end = LocalDateTime.now();
+        LocalDateTime start = end.minusDays(days);
 
-        // 获取用户基本信息
+        AiHealthAnalysisRequestDto dto = new AiHealthAnalysisRequestDto();
+        dto.setUserId(userId);
+        dto.setStartTime(start);
+        dto.setEndTime(end);
+
         AppUser user = appUserMapper.selectById(userId);
+
         if (user != null) {
-            AiHealthAnalysisRequestDto.UserBasicInfo userBasicInfo = new AiHealthAnalysisRequestDto.UserBasicInfo();
-            userBasicInfo.setName(user.getName());
+            AiHealthAnalysisRequestDto.UserBasicInfo info = new AiHealthAnalysisRequestDto.UserBasicInfo();
+            info.setName(user.getName());
 
-            // 计算年龄
             if (user.getBirth() != null) {
-                LocalDate birthDate = user.getBirth().toLocalDate();
-                LocalDate now = LocalDate.now();
-                userBasicInfo.setAge(Period.between(birthDate, now).getYears());
-            }
-            // 先查询用户的指标
-
-            HealthIndicator heightHealthIndicator = healthIndicatorMapper.selectOne(
-                    Wrappers.<HealthIndicator>lambdaQuery()
-                            .eq(HealthIndicator::getBelongUserId, userId)
-                            .eq(HealthIndicator::getName, "身高"));
-            if (heightHealthIndicator != null) {
-                // 查询用户记录这个指标的最后1条记录
-                HealthIndicatorRecord healthIndicatorRecord = healthIndicatorRecordMapper.selectOne(
-                        Wrappers.<HealthIndicatorRecord>lambdaQuery()
-                                .eq(HealthIndicatorRecord::getRecordUserId, userId)
-                                .eq(HealthIndicatorRecord::getHealthIndicatorId, heightHealthIndicator.getId())
-                                .orderByDesc(HealthIndicatorRecord::getRecordTime)
-                                .last("limit 1"));
-                if (healthIndicatorRecord != null) {
-                    userBasicInfo.setHeight(healthIndicatorRecord.getRecordValue());
-                }
-            }
-            // 先查询用户的指标
-            HealthIndicator weightHealthIndicator = healthIndicatorMapper.selectOne(
-                    Wrappers.<HealthIndicator>lambdaQuery()
-                            .eq(HealthIndicator::getBelongUserId, userId)
-                            .eq(HealthIndicator::getName, "体重"));
-            if (weightHealthIndicator != null) {
-                // 查询用户记录这个指标的最后1条记录
-                HealthIndicatorRecord healthIndicatorRecord = healthIndicatorRecordMapper.selectOne(
-                        Wrappers.<HealthIndicatorRecord>lambdaQuery()
-                                .eq(HealthIndicatorRecord::getRecordUserId, userId)
-                                .eq(HealthIndicatorRecord::getHealthIndicatorId, weightHealthIndicator.getId())
-                                .orderByDesc(HealthIndicatorRecord::getRecordTime)
-                                .last("limit 1"));
-                if (healthIndicatorRecord != null) {
-                    userBasicInfo.setWeight(healthIndicatorRecord.getRecordValue());
-                }
+                info.setAge(Period.between(user.getBirth().toLocalDate(), LocalDate.now()).getYears());
             }
 
-            requestDto.setUserBasicInfo(userBasicInfo);
+            dto.setUserBasicInfo(info);
         }
 
-        // 获取健康指标记录
-        List<HealthIndicatorRecord> healthRecords = healthIndicatorRecordMapper.selectList(
-                Wrappers.<HealthIndicatorRecord>lambdaQuery()
-                        .eq(HealthIndicatorRecord::getRecordUserId, userId)
-                        .between(HealthIndicatorRecord::getRecordTime, startTime, endTime)
-                        .orderByDesc(HealthIndicatorRecord::getRecordTime));
-        if (healthRecords != null && !healthRecords.isEmpty()) {
-            List<AiHealthAnalysisRequestDto.HealthIndicatorData> healthIndicators = healthRecords.stream()
-                    .map(record -> {
-                        AiHealthAnalysisRequestDto.HealthIndicatorData data = new AiHealthAnalysisRequestDto.HealthIndicatorData();
-                        HealthIndicator healthIndicator = healthIndicatorMapper
-                                .selectById(record.getHealthIndicatorId());
-                        data.setIndicatorName(healthIndicator.getName());
-                        HealthIndicatorType healthIndicatorType = healthIndicatorTypeMapper
-                                .selectById(healthIndicator.getHealthIndicatorTypeId());
-                        data.setIndicatorType(healthIndicatorType.getName());
-                        data.setContent(healthIndicator.getContent());
-                        data.setThreshold(healthIndicator.getThreshold());
-                        data.setIsAbnormity(record.getIsAbnormity());
-
-                        // 需要关联查询获取指标名称等信息
-                        data.setValue(record.getRecordValue());
-                        data.setRecordTime(record.getRecordTime());
-                        data.setIsAbnormity(record.getIsAbnormity());
-                        return data;
-                    })
-                    .collect(Collectors.toList());
-            requestDto.setHealthIndicators(healthIndicators);
-        }
-
-        // 获取饮食记录
-        List<DietRecord> dietRecords = dietRecordMapper.selectList(
+        List<DietRecord> list = dietRecordMapper.selectList(
                 Wrappers.<DietRecord>lambdaQuery()
                         .eq(DietRecord::getRecordUserId, userId)
-                        .between(DietRecord::getRecordTime, startTime, endTime)
-                        .orderByDesc(DietRecord::getRecordTime));
-        if (dietRecords != null && !dietRecords.isEmpty()) {
-            List<AiHealthAnalysisRequestDto.DietData> dietData = dietRecords.stream()
-                    .map(record -> {
-                        AiHealthAnalysisRequestDto.DietData data = new AiHealthAnalysisRequestDto.DietData();
-                        // 需要关联查询获取食物信息
-                        // 查询食物类型
-                        Food food = foodMapper.selectById(record.getFoodId());
-                        data.setFoodName(food.getName());
-                        // 查询食物类型
-                        FoodType foodType = foodTypeMapper.selectById(food.getFoodTypeId());
-                        data.setFoodType(foodType.getName());
-                        // 查询食物单位
-                        FoodUnit foodUnit = foodUnitMapper.selectById(record.getFoodUnitId());
-                        data.setUnit(foodUnit.getUnitName());
-                        // 查询食物热量
-                        data.setCalories(Extension
-                                .ToFixed4(food.getCalories() * foodUnit.getUnitValue() * record.getRecordValue()));
-                        data.setProtein(Extension
-                                .ToFixed4(food.getProtein() * foodUnit.getUnitValue() * record.getRecordValue()));
-                        data.setCarbohydrates(Extension
-                                .ToFixed4(food.getCarbohydrates() * foodUnit.getUnitValue() * record.getRecordValue()));
-                        data.setFat(Extension
-                                .ToFixed4(food.getFat() * foodUnit.getUnitValue() * record.getRecordValue()));
-                        data.setQuantity(record.getRecordValue());
-                        data.setRecordTime(record.getRecordTime());
-                        return data;
-                    })
-                    .collect(Collectors.toList());
-            requestDto.setDietRecords(dietData);
+                        .between(DietRecord::getRecordTime, start, end)
+        );
+
+        if (list != null) {
+            dto.setDietRecords(list.stream().map(r -> {
+
+                AiHealthAnalysisRequestDto.DietData d = new AiHealthAnalysisRequestDto.DietData();
+
+                Food f = foodMapper.selectById(r.getFoodId());
+                FoodUnit u = foodUnitMapper.selectById(r.getFoodUnitId());
+
+                if (f != null && u != null) {
+                    double factor = safe(u.getUnitValue()) * safe(r.getRecordValue());
+
+                    d.setFoodName(f.getName());
+                    d.setCalories(f.getCalories() * factor);
+                    d.setProtein(f.getProtein() * factor);
+                    d.setFat(f.getFat() * factor);
+                    d.setCarbohydrates(f.getCarbohydrates() * factor);
+                }
+
+                return d;
+            }).collect(Collectors.toList()));
         }
-        return requestDto;
+
+        return dto;
     }
 
-    /**
-     * 构建分析提示词
-     */
-    private String buildAnalysisPrompt(AiHealthAnalysisRequestDto requestDto) {
-        StringBuilder prompt = new StringBuilder();
+    // ================= fallback =================
+    private AiHealthAnalysisResponseDto.AnalysisResult buildFallbackResult(int score) {
+        AiHealthAnalysisResponseDto.AnalysisResult r =
+                new AiHealthAnalysisResponseDto.AnalysisResult();
 
-        prompt.append("请分析以下用户的健康数据：\n\n");
+        r.setScore(score);
+        r.setEvaluation("一般");
 
-        // 用户基本信息
-        if (requestDto.getUserBasicInfo() != null) {
-            AiHealthAnalysisRequestDto.UserBasicInfo userInfo = requestDto.getUserBasicInfo();
-            prompt.append("用户基本信息：\n");
-            prompt.append("姓名：").append(userInfo.getName()).append("\n");
-            prompt.append("年龄：").append(userInfo.getAge()).append("岁\n");
-            prompt.append("性别：").append(userInfo.getGender()).append("\n");
-            prompt.append("身高：").append(userInfo.getHeight()).append("cm\n");
-            prompt.append("体重：").append(userInfo.getWeight()).append("kg\n\n");
-        }
+        r.setProblems(List.of("AI解析失败"));
+        r.setSuggestions(List.of("请稍后重试"));
 
-        // 分析时间范围
-        prompt.append("分析时间范围：").append(requestDto.getStartTime()).append(" 至 ")
-                .append(requestDto.getEndTime()).append("\n\n");
-
-        // 健康指标数据
-        if (requestDto.getHealthIndicators() != null && !requestDto.getHealthIndicators().isEmpty()) {
-            prompt.append("健康指标记录：\n");
-            for (AiHealthAnalysisRequestDto.HealthIndicatorData indicator : requestDto.getHealthIndicators()) {
-                prompt.append("- ").append(indicator.getIndicatorName())
-                        .append("：").append(indicator.getValue())
-
-                        .append("（正常范围：").append(indicator.getThreshold()).append("）")
-                        .append("，记录时间：").append(indicator.getRecordTime())
-                        .append("，是否异常：").append("Y".equals(indicator.getIsAbnormity()) ? "是" : "否")
-                        .append("\n");
-            }
-            prompt.append("\n");
-        }
-
-        // 饮食记录数据
-        if (requestDto.getDietRecords() != null && !requestDto.getDietRecords().isEmpty()) {
-            prompt.append("饮食记录：\n");
-            for (AiHealthAnalysisRequestDto.DietData diet : requestDto.getDietRecords()) {
-                prompt.append("- ").append(diet.getFoodName())
-                        .append("：").append(diet.getQuantity()).append(diet.getUnit())
-                        .append("，热量：").append(diet.getCalories()).append("kcal")
-                        .append("，蛋白质：").append(diet.getProtein()).append("g")
-                        .append("，碳水：").append(diet.getCarbohydrates()).append("g")
-                        .append("，脂肪：").append(diet.getFat()).append("g")
-                        .append("，记录时间：").append(diet.getRecordTime())
-                        .append("\n");
-            }
-            prompt.append("\n");
-        }
-
-        // 运动记录数据
-        if (requestDto.getSportRecords() != null && !requestDto.getSportRecords().isEmpty()) {
-            prompt.append("运动记录：\n");
-            for (AiHealthAnalysisRequestDto.SportData sport : requestDto.getSportRecords()) {
-                prompt.append("- ").append(sport.getSportName())
-                        .append("：").append(sport.getSportCount()).append(sport.getUnit())
-                        .append("，消耗热量：").append(sport.getCaloriesBurned()).append("kcal")
-                        .append("，记录时间：").append(sport.getRecordTime())
-                        .append("\n");
-            }
-            prompt.append("\n");
-        }
-
-        prompt.append("请基于以上数据进行全面的健康分析，并按照指定的JSON格式返回分析结果。");
-
-        return prompt.toString();
+        return r;
     }
 
-    /**
-     * 构建错误响应
-     */
-    private AiHealthAnalysisResponseDto buildErrorResponse(String errorMessage) {
-        AiHealthAnalysisResponseDto response = new AiHealthAnalysisResponseDto();
-        response.setSuccess(false);
-        response.setErrorMessage(errorMessage);
-        response.setAnalysisTime(LocalDateTime.now());
-        return response;
+    private AiHealthAnalysisResponseDto buildErrorResponse(String msg) {
+        AiHealthAnalysisResponseDto r = new AiHealthAnalysisResponseDto();
+        r.setSuccess(false);
+        r.setErrorMessage(msg);
+        r.setAnalysisTime(LocalDateTime.now());
+        return r;
     }
 }
