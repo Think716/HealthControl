@@ -116,44 +116,6 @@
                 </view>
             </view>
 
-            <!-- 运动分析 -->
-            <view id="sport" class="sport-section section">
-                <view class="card-header">
-                    <text class="card-title">🏃‍♂️ 运动分析</text>
-                </view>
-                <view class="sport-score">
-                    <text class="score-label">📈 运动频率评分</text>
-                    <view class="score-bar">
-                        <view class="score-progress"
-                            :style="{ width: analysisResult.SportAnalysis.ExerciseFrequencyScore + '%' }"></view>
-                    </view>
-                    <text class="score-value">{{ analysisResult.SportAnalysis.ExerciseFrequencyScore }}/100</text>
-                </view>
-
-                <view class="sport-assessments">
-                    <view class="assessment-item">
-                        <text class="assessment-label">💪 运动量评估</text>
-                        <text class="assessment-value">{{ analysisResult.SportAnalysis.ExerciseVolumeAssessment }}</text>
-                    </view>
-                    <view class="assessment-item">
-                        <text class="assessment-label">🔥 热量消耗评估</text>
-                        <text class="assessment-value">{{ analysisResult.SportAnalysis.CaloriesBurnedAssessment }}</text>
-                    </view>
-                    <view class="assessment-item">
-                        <text class="assessment-label">🎯 运动多样性评估</text>
-                        <text class="assessment-value">{{ analysisResult.SportAnalysis.ExerciseVarietyAssessment }}</text>
-                    </view>
-                </view>
-
-                <view class="exercise-recommendations">
-                    <text class="recommendations-title">🏋️‍♀️ 运动建议</text>
-                    <view v-for="(recommendation, index) in analysisResult.SportAnalysis.ExerciseRecommendations"
-                        :key="index" class="recommendation-item">
-                        <text class="recommendation-text">{{ index + 1 }}. {{ recommendation }}</text>
-                    </view>
-                </view>
-            </view>
-
             <!-- 指标分析 -->
             <view id="indicators" class="indicators-section section">
                 <view class="card-header">
@@ -224,7 +186,7 @@
 
             <!-- 分析时间 -->
             <view class="analysis-time">
-                <text class="time-text">分析时间: {{ formatAnalysisTime(Data.AnalysisTime) }}</text>
+                <text class="time-text">分析时间: {{ formatAnalysisTime(Data?.AnalysisTime) }}</text>
             </view>
         </view>
 
@@ -273,7 +235,6 @@ const tabList = ref([
     { id: 'overview', name: '总评', emoji: '🎯' },
     { id: 'risks', name: '风险', emoji: '⚠️' },
     { id: 'nutrition', name: '营养', emoji: '🥗' },
-    { id: 'sport', name: '运动', emoji: '🏃‍♂️' },
     { id: 'indicators', name: '指标', emoji: '📊' },
     { id: 'recommendations', name: '建议', emoji: '💡' }
 ]);
@@ -333,6 +294,59 @@ onReady(async () => {
 });
 
 // API调用方法
+const getDefaultAnalysisResult = () => ({
+    OverallHealthScore: 0,
+    HealthLevel: '待评估',
+    Summary: '暂无分析摘要',
+    HealthRisks: [],
+    NutritionAnalysis: {
+        NutritionBalanceScore: 0,
+        CalorieIntakeAssessment: '暂无数据',
+        ProteinAssessment: '暂无数据',
+        CarbohydrateAssessment: '暂无数据',
+        FatAssessment: '暂无数据',
+        DietaryRecommendations: []
+    },
+    IndicatorAnalyses: [],
+    Recommendations: []
+});
+
+const EXCLUDED_KEYWORDS = ['运动', '血糖', '血氧', '肺活量', '游离三碘甲状腺氨基酸', '游离三碘甲状腺原氨酸', 'FT3'];
+
+const shouldExcludeText = (...texts) => {
+    const merged = texts.filter(Boolean).join('');
+    return EXCLUDED_KEYWORDS.some(keyword => merged.includes(keyword));
+};
+
+const filterAnalysisItems = (result) => ({
+    ...result,
+    HealthRisks: result.HealthRisks.filter(risk => !shouldExcludeText(risk?.RiskType, risk?.Description, risk?.Suggestions)),
+    IndicatorAnalyses: result.IndicatorAnalyses.filter(indicator => !shouldExcludeText(indicator?.IndicatorName)),
+    Recommendations: result.Recommendations.filter(item => !shouldExcludeText(item?.RecommendationType, item?.Title, item?.Content))
+});
+
+const normalizeAnalysisResult = (result) => {
+    const fallback = getDefaultAnalysisResult();
+    if (!result || typeof result !== 'object') return fallback;
+
+    const normalized = {
+        ...fallback,
+        ...result,
+        HealthRisks: Array.isArray(result.HealthRisks) ? result.HealthRisks : [],
+        NutritionAnalysis: {
+            ...fallback.NutritionAnalysis,
+            ...(result.NutritionAnalysis || {}),
+            DietaryRecommendations: Array.isArray(result.NutritionAnalysis?.DietaryRecommendations)
+                ? result.NutritionAnalysis.DietaryRecommendations
+                : []
+        },
+        IndicatorAnalyses: Array.isArray(result.IndicatorAnalyses) ? result.IndicatorAnalyses : [],
+        Recommendations: Array.isArray(result.Recommendations) ? result.Recommendations : []
+    };
+
+    return filterAnalysisItems(normalized);
+};
+
 const getAiAnalyseApi = async () => {
     try {
         loading.value = true;
@@ -344,8 +358,8 @@ const getAiAnalyseApi = async () => {
             Days: 7
         });
 
-        Data.value = response.Data;
-        analysisResult.value = response.Data.AnalysisResult;
+        Data.value = response?.Data || {};
+        analysisResult.value = normalizeAnalysisResult(response?.Data?.AnalysisResult);
 
         // 数据加载完成后计算section位置
         await nextTick();
@@ -402,7 +416,10 @@ const getPriorityType = (priority) => {
 
 // 格式化分析时间
 const formatAnalysisTime = (timeString) => {
+    if (!timeString) return '暂无时间';
     const date = new Date(timeString);
+    if (Number.isNaN(date.getTime())) return '暂无时间';
+
     return date.toLocaleString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -414,22 +431,18 @@ const formatAnalysisTime = (timeString) => {
 
 // 获取风险类型对应的emoji
 const getRiskEmoji = (riskType) => {
-    if (riskType.includes('体重')) return '⚖️';
-    if (riskType.includes('血糖')) return '🩸';
-    if (riskType.includes('营养')) return '🥗';
-    if (riskType.includes('运动')) return '🏃‍♂️';
-    if (riskType.includes('心血管')) return '❤️';
+    const type = String(riskType || '');
+    if (type.includes('体重')) return '⚖️';
+    if (type.includes('营养')) return '🥗';
+    if (type.includes('心血管')) return '❤️';
     return '⚠️';
 };
 
 // 获取指标名称对应的emoji
 const getIndicatorEmoji = (indicatorName) => {
-    if (indicatorName.includes('体重')) return '⚖️';
-    if (indicatorName.includes('血糖')) return '🩸';
-    if (indicatorName.includes('血氧')) return '🩸';
-    if (indicatorName.includes('肺活量')) return '💨';
-    if (indicatorName.includes('体温')) return '🌡️';
-    if (indicatorName.includes('甲状腺')) return '🦋';
+    const name = String(indicatorName || '');
+    if (name.includes('体重')) return '⚖️';
+    if (name.includes('体温')) return '🌡️';
     return '📊';
 };
 
@@ -437,7 +450,6 @@ const getIndicatorEmoji = (indicatorName) => {
 const getRecommendationEmoji = (recommendationType) => {
     if (recommendationType === '医疗') return '🏥';
     if (recommendationType === '饮食') return '🍽️';
-    if (recommendationType === '运动') return '🏃‍♂️';
     if (recommendationType === '生活习惯') return '🏡';
     return '💡';
 };
@@ -477,7 +489,7 @@ const calculateSectionPositions = async () => {
 
     await nextTick();
 
-    const sectionIds = ['overview', 'risks', 'nutrition', 'sport', 'indicators', 'recommendations'];
+    const sectionIds = ['overview', 'risks', 'nutrition', 'indicators', 'recommendations'];
     const positions = [];
 
     return new Promise((resolve) => {
@@ -825,9 +837,8 @@ const updateActiveTab = (scrollTop) => {
     margin: 20upx 0;
 }
 
-/* 营养分析和运动分析样式 */
-.nutrition-section,
-.sport-section {
+/* 营养分析样式 */
+.nutrition-section {
     background: #fff;
     border-radius: 16upx;
     padding: 24upx;
@@ -835,8 +846,7 @@ const updateActiveTab = (scrollTop) => {
     margin: 20upx 0;
 }
 
-.nutrition-score,
-.sport-score {
+.nutrition-score {
     margin-bottom: 32upx;
 }
 
@@ -869,8 +879,7 @@ const updateActiveTab = (scrollTop) => {
     color: #666;
 }
 
-.nutrition-assessments,
-.sport-assessments {
+.nutrition-assessments {
     margin-bottom: 40upx;
 }
 
@@ -895,8 +904,7 @@ const updateActiveTab = (scrollTop) => {
     line-height: 1.5;
 }
 
-.dietary-recommendations,
-.exercise-recommendations {
+.dietary-recommendations {
     background: #f8f9fa;
     padding: 20upx;
     border-radius: 12upx;

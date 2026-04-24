@@ -117,10 +117,11 @@
                     <!-- 分量输入 -->
                     <view class="input-section">
                         <text class="input-label">请输入分量：</text>
-                        <input 
-                            v-model="portionAmount" 
-                            type="number" 
-                            placeholder="例如：1、2.5" 
+                        <input
+                            v-model="portionAmount"
+                            type="digit"
+                            placeholder="例如：1、2.5"
+                            placeholder-style="color:#9ca3af;font-size:24rpx;"
                             :style="inputStyles"
                             class="portion-input"
                         />
@@ -163,7 +164,7 @@
 import { useCommonStore } from '@/store';
 import { Post } from '@/utils/http';
 import { onLoad, onReady, onShow } from "@dcloudio/uni-app";
-import { computed, reactive, ref, nextTick } from 'vue';
+import { computed, reactive, ref, nextTick, watch } from 'vue';
 import { GetFormatFullDate } from '@/utils/comm';
 
 // 获取store
@@ -184,7 +185,19 @@ const foodPopup = ref(null); // 弹窗引用
 const portionPopup = ref(null); // 分量输入弹窗引用
 const selectedUnit = ref(null); // 选中的单位信息 { food, unit }
 const portionAmount = ref(''); // 输入的分量数量
-const recordTime = ref(new Date().toISOString()); // 记录时间，默认当前时间
+const formatRecordTimeForPicker = (date = new Date()) => {
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+const recordTime = ref(formatRecordTimeForPicker()); // 记录时间，默认当前时间
+
+const parsePickerDateTime = (value) => {
+    if (!value) return new Date();
+    const [datePart, timePart = '00:00'] = value.split(' ');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+    return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
+};
 const calculatedNutrition = ref(null); // 计算后的营养信息
 const isRecording = ref(false);
 const voiceText = ref('');
@@ -196,7 +209,10 @@ let manager = null;
 // 输入框样式
 const inputStyles = {
     borderColor: '#4CAF50',
-    borderRadius: '12rpx'
+    borderRadius: '12rpx',
+    color: '#111827',
+    fontSize: '30rpx',
+    fontWeight: '600'
 };
 
 const where = reactive({});
@@ -265,16 +281,16 @@ const onFoodScroll = (e) => {
     // 获取所有分类区域的位置，找到当前应该高亮的分类
     const query = uni.createSelectorQuery();
     const categoryIds = FoodTypeList.value.map(item => `#category-${item.Id}`);
-    
+
     if (categoryIds.length === 0) return;
 
     query.selectAll(categoryIds.join(',')).boundingClientRect();
     query.exec((res) => {
         if (!res || !res[0]) return;
-        
+
         const rects = res[0];
         let currentIndex = 0;
-        
+
         for (let i = 0; i < rects.length; i++) {
             if (rects[i].top <= 100) {
                 currentIndex = i;
@@ -282,7 +298,7 @@ const onFoodScroll = (e) => {
                 break;
             }
         }
-        
+
         activeCategory.value = currentIndex;
     });
 };
@@ -300,6 +316,7 @@ const selectUnit = (food, unit) => {
     // 初始化分量输入
     portionAmount.value = '';
     calculatedNutrition.value = null;
+    recordTime.value = formatRecordTimeForPicker();
 };
 
 // 关闭分量弹窗
@@ -308,6 +325,7 @@ const closePortionPopup = () => {
     selectedUnit.value = null;
     portionAmount.value = '';
     calculatedNutrition.value = null;
+    recordTime.value = formatRecordTimeForPicker();
 };
 
 // 时间选择变化
@@ -319,43 +337,51 @@ const onTimeChange = (e) => {
 const calculateNutrition = () => {
     if (!selectedUnit.value || !portionAmount.value || parseFloat(portionAmount.value) <= 0) {
         calculatedNutrition.value = null;
-        return;
+        return null;
     }
 
     const { food, unit } = selectedUnit.value;
     const amount = parseFloat(portionAmount.value);
     const unitWeight = parseFloat(unit.UnitValue || 1);
-    
+
     calculatedNutrition.value = {
         calories: (food.Calories * unitWeight * amount).toFixed(2),
         protein: (food.Protein * unitWeight * amount).toFixed(2),
         carbohydrates: (food.Carbohydrates * unitWeight * amount).toFixed(2),
         fat: (food.Fat * unitWeight * amount).toFixed(2)
     };
+
+    return calculatedNutrition.value;
 };
 
-// 监听分量输入变化
-portionAmount.value && calculateNutrition();
+watch([portionAmount, selectedUnit], () => {
+    calculateNutrition();
+});
 
 // 保存饮食记录
 const saveDietRecord = async () => {
     if (!canSave.value) return;
 
     uni.showLoading({ title: '保存中...' });
-    
+
     try {
-        const nutrition = calculatedNutrition.value || calculateNutrition();
-        
-        const result = await Post('/DietRecord/Add', {
-            UserId: UserId.value,
+        const nutrition = calculateNutrition();
+
+        if (!nutrition) {
+            uni.showToast({
+                title: '请先输入有效分量',
+                icon: 'none'
+            });
+            return;
+        }
+
+        const parsedAmount = parseFloat(portionAmount.value);
+        const result = await Post('/DietRecord/CreateOrEdit', {
+            RecordUserId: UserId.value,
             FoodId: selectedUnit.value.food.Id,
-            UnitId: selectedUnit.value.unit.Id,
-            Amount: parseFloat(portionAmount.value),
-            RecordTime: GetFormatFullDate(new Date(recordTime.value)),
-            Calories: parseFloat(nutrition.calories),
-            Protein: parseFloat(nutrition.protein),
-            Carbohydrates: parseFloat(nutrition.carbohydrates),
-            Fat: parseFloat(nutrition.fat)
+            FoodUnitId: selectedUnit.value.unit.Id,
+            RecordValue: Math.max(1, Math.round(parsedAmount)),
+            RecordTime: GetFormatFullDate(parsePickerDateTime(recordTime.value))
         });
 
         if (result.Success) {
@@ -374,12 +400,13 @@ const saveDietRecord = async () => {
         }
 
     } catch (error) {
-        uni.hideLoading();
         uni.showToast({
-            title: '网络错误，请重试',
+            title: error?.Msg || error?.message || '网络错误，请重试',
             icon: 'none'
         });
         console.error('保存饮食记录失败:', error);
+    } finally {
+        uni.hideLoading();
     }
 };
 
@@ -831,7 +858,10 @@ const handleVoiceRecognitionResult = async (text) => {
                 padding: 12rpx 16rpx;
                 border: 1rpx solid #e0e0e0;
                 border-radius: 12rpx;
-                font-size: 24rpx;
+                font-size: 30rpx;
+                color: #111827;
+                font-weight: 600;
+                line-height: 1.4;
             }
         }
 

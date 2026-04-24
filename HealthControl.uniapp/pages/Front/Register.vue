@@ -11,7 +11,7 @@
 		<view class="logo-area">
 			<image class="logo animate-float" src="/static/logo.png" mode="aspectFit"></image>
 			<text class="welcome-text animate-fade-in">欢迎注册</text>
-			<text class="slogan animate-fade-in-delay">加入我们，开启字母哥学习之旅</text>
+			<text class="slogan animate-fade-in-delay">加入健康管理，开启自律生活</text>
 		</view>
 
 		<!-- 注册表单区域 -->
@@ -21,26 +21,26 @@
 
 
 					<view class="input-group">
-						<text class="icon">??</text>
+						<text class="icon">👤</text>
 						<input type="text" v-model="formData.UserName" placeholder="请输入您的账号" class="custom-input" />
 						<view class="input-line"></view>
 					</view>
 
 					<view class="input-group">
-						<text class="icon">??</text>
+						<text class="icon">🔒</text>
 						<input type="password" v-model="formData.Password" placeholder="请输入您的密码" class="custom-input"
 							password="true" />
 						<view class="input-line"></view>
 					</view>
 
 					<view class="input-group">
-						<text class="icon">??</text>
+						<text class="icon">📱</text>
 						<input type="text" v-model="formData.PhoneNumber" placeholder="请输入您的手机号" class="custom-input" />
 						<view class="input-line"></view>
 					</view>
 
 					<view class="input-group">
-						<text class="icon">??</text>
+						<text class="icon">🧑</text>
 						<uni-data-checkbox v-model="formData.RoleType" :localdata="RoleTypeList" />
 						<view class="input-line"></view>
 					</view>
@@ -63,7 +63,7 @@
 import { GetLoginCode } from "@/utils/comm";
 import { Post } from "@/utils/http";
 import { reactive, ref } from 'vue';
-import {  onLoad,onShow,onHide,onUnload} from "@dcloudio/uni-app";
+import { onLoad } from "@dcloudio/uni-app";
 
 // 响应式数据
 const formData = reactive({
@@ -159,16 +159,16 @@ onLoad(() => {
 })
 </script>
 
-<style>
+<style scoped>
 /* 基础页面样式 */
 page {
-	background-color: white;
+	background-color: #f8fffe;
 }
 
 /* 容器样式 */
 .login-container {
 	min-height: 100vh;
-	background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+	background: linear-gradient(135deg, #e8f8f5 0%, #f0fdf4 60%, #ffffff 100%);
 	position: relative;
 	overflow: hidden;
 }
@@ -190,7 +190,7 @@ page {
 .circle-1 {
 	width: 600rpx;
 	height: 600rpx;
-	background: linear-gradient(45deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(45deg, #10b981, #34d399);
 	top: -200rpx;
 	right: -200rpx;
 	animation: float 8s ease-in-out infinite;
@@ -199,7 +199,7 @@ page {
 .circle-2 {
 	width: 400rpx;
 	height: 400rpx;
-	background: linear-gradient(45deg, #2b85e4, #2CC4F5);
+	background: linear-gradient(45deg, #34d399, #10b981);
 	bottom: -150rpx;
 	left: -150rpx;
 	animation: float 12s ease-in-out infinite;
@@ -208,7 +208,7 @@ page {
 .circle-3 {
 	width: 300rpx;
 	height: 300rpx;
-	background: linear-gradient(45deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(45deg, #10b981, #34d399);
 	top: 40%;
 	left: 60%;
 	animation: float 10s ease-in-out infinite;
@@ -247,14 +247,18 @@ page {
 	width: 100%;
 	position: relative;
 	margin-top: -120upx;
-	background-color: #ffffff;
-	border-radius: 8% 8% 0% 0;
+	background-color: rgba(255,255,255,0.96);
+	border-radius: 48rpx 48rpx 0 0;
+	box-shadow: 0 -8rpx 24rpx rgba(16, 185, 129, 0.08);
 }
 
 /* 登录卡片 */
 .login-card {
 	padding: 60rpx 40rpx;
+	background: rgba(255,255,255,0.92);
+	border-radius: 24rpx;
 	margin: 40rpx 30rpx 0rpx;
+	box-shadow: 0 8rpx 24rpx rgba(15, 118, 110, 0.08);
 }
 
 /* 输入框组 */
@@ -291,7 +295,7 @@ page {
 
 .custom-input:focus+.input-line {
 	height: 3rpx;
-	background: linear-gradient(90deg, transparent, #2CC4F5, transparent);
+	background: linear-gradient(90deg, transparent, #10b981, transparent);
 }
 
 /* 按钮样式 */
@@ -299,7 +303,7 @@ page {
 	position: relative;
 	width: 100%;
 	height: 90rpx;
-	background: linear-gradient(135deg, #2CC4F5, #2b85e4);
+	background: linear-gradient(135deg, #10b981, #34d399);
 	border: none;
 	border-radius: 45rpx;
 	margin: 60rpx 0 30rpx;
@@ -308,7 +312,7 @@ page {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 15rpx 30rpx rgba(44, 196, 245, 0.3);
+	box-shadow: 0 15rpx 30rpx rgba(16, 185, 129, 0.25);
 	transition: transform 0.3s ease;
 }
 
@@ -343,7 +347,7 @@ page {
 }
 
 .register-link {
-	color: #2CC4F5;
+	color: #10b981;
 	font-size: 28rpx;
 }
 

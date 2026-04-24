@@ -368,11 +368,15 @@ const updateChartData = () => {
     });
 
     // 为每个指标创建数据系列
-    const series = Array.from(indicatorNames).map((indicatorName, index) => {
+    const series = Array.from(indicatorNames).map((indicatorName) => {
         const data = sortedData.map(dateItem => {
             const indicator = dateItem.Items.find(item => item.HealthIndicatorName === indicatorName);
-            // 如果没有数据，返回0而不是null，确保折线连续
-            return indicator ? indicator.RecordValue : 0;
+            if (!indicator || indicator.RecordValue === null || indicator.RecordValue === undefined || indicator.RecordValue === '') {
+                return null;
+            }
+
+            const value = parseFloat(indicator.RecordValue);
+            return Number.isNaN(value) ? null : value;
         });
 
         return {
@@ -380,6 +384,30 @@ const updateChartData = () => {
             data: data
         };
     });
+
+    // 根据当前数据动态调整Y轴范围，让小数级变化更明显
+    const validValues = series.flatMap(item => item.data).filter(value => value !== null && value !== undefined);
+    if (validValues.length > 0) {
+        const dataMin = Math.min(...validValues);
+        const dataMax = Math.max(...validValues);
+        const range = dataMax - dataMin;
+
+        // 数据跨度越小，保留的小数位越多
+        const tofix = range < 1 ? 3 : range < 10 ? 2 : 1;
+        const padding = range === 0 ? Math.max(Math.abs(dataMax) * 0.1, 0.1) : Math.max(range * 0.2, 0.05);
+
+        chartOpts.value = {
+            ...chartOpts.value,
+            yAxis: {
+                ...chartOpts.value.yAxis,
+                data: [{
+                    min: Number((dataMin - padding).toFixed(tofix)),
+                    max: Number((dataMax + padding).toFixed(tofix)),
+                    tofix
+                }]
+            }
+        };
+    }
 
     // 更新图例数据
     const colors = chartOpts.value.color;
