@@ -1,5 +1,5 @@
 <template>
-	<view>
+	<view class="user-center-page">
 		<!-- 顶部导航栏 -->
 		<uni-nav-bar dark :fixed="true" shadow background-color="var(--primary-color)" status-bar title="个人中心" />
 
@@ -135,6 +135,13 @@ const navigateTo = (url) => {
 </script>
 
 <style lang="scss" scoped>
+
+/* 页面容器，预留底部导航高度，避免退出按钮被遮挡 */
+.user-center-page {
+	padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+	box-sizing: border-box;
+}
+
 /* 用户信息卡片样式 */
 .user-info-card {
 	display: flex;
@@ -269,6 +276,7 @@ const navigateTo = (url) => {
 
 /* 退出按钮样式 */
 .logout-button {
+	display: block;
 	width: 90%;
 	height: 90rpx;
 	line-height: 90rpx;
