@@ -1,4 +1,4 @@
-、package com.example.web.tools;
+package com.example.web.tools;
 
 import com.example.web.config.AiConfig;
 import com.example.web.tools.dto.DeepSeekRequestDto;
