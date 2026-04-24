@@ -1,4 +1,4 @@
-package com.example.web.tools;
+、package com.example.web.tools;
 
 import com.example.web.config.AiConfig;
 import com.example.web.tools.dto.DeepSeekRequestDto;
@@ -118,17 +118,38 @@ public class DeepSeekApiClient {
      * @return 模拟的API响应字符串
      */
     private String readMockResponse() {
-        try {
-            // 从项目根目录下的external-resources文件夹读取airesult.txt
-            String filePath = "external-resources/airesult.txt";
-            String content = Files.readString(Paths.get(filePath));
-            log.info("成功读取模拟数据文件: {}", filePath);
-            return content;
-        } catch (IOException e) {
-            log.error("读取模拟数据文件失败", e);
-            // 返回一个基本的错误响应格式
-            return "{\"choices\":[{\"message\":{\"content\":\"模拟数据读取失败\"}}]}";
+        // 依次尝试多个候选路径，兼容历史文件名与不同启动目录
+        List<String> candidates = Arrays.asList(
+                "external-resources/airesult.txt",
+                "external-resources/aireuslt.txt",
+                "./external-resources/airesult.txt",
+                "./external-resources/aireuslt.txt",
+                "HealthControl.springboot/external-resources/airesult.txt",
+                "HealthControl.springboot/external-resources/aireuslt.txt"
+        );
+
+        for (String filePath : candidates) {
+            try {
+                if (Files.exists(Paths.get(filePath))) {
+                    String content = Files.readString(Paths.get(filePath));
+                    log.info("成功读取模拟数据文件: {}", filePath);
+                    return content;
+                }
+            } catch (IOException e) {
+                log.warn("读取模拟数据文件失败: {}", filePath, e);
+            }
         }
+        log.error("未找到AI模拟数据文件，将使用内置兜底模拟数据");
+        return defaultMockResponse();
+    }
+
+    /**
+     * 返回内置兜底模拟数据（保证可被前端正确渲染）
+     */
+    private String defaultMockResponse() {
+        return """
+                {"choices":[{"message":{"content":"{\"overallHealthScore\":78,\"healthLevel\":\"良好\",\"healthRisks\":[{\"riskType\":\"一般健康风险\",\"riskLevel\":\"低\",\"description\":\"近期健康数据总体稳定。\",\"suggestions\":\"保持规律作息与均衡饮食。\"}],\"nutritionAnalysis\":{\"calorieIntakeAssessment\":\"总体合理\",\"nutritionBalanceScore\":75,\"proteinAssessment\":\"基本达标\",\"carbohydrateAssessment\":\"基本达标\",\"fatAssessment\":\"建议适度控制\",\"dietaryRecommendations\":[\"多吃蔬果与优质蛋白\",\"减少高油高糖食物\"]},\"indicatorAnalyses\":[{\"indicatorName\":\"体重\",\"indicatorType\":\"身体指标\",\"currentValue\":65,\"normalRange\":\"50-75\",\"status\":\"正常\",\"trend\":\"稳定\",\"advice\":\"继续保持\"}],\"recommendations\":[{\"recommendationType\":\"生活习惯\",\"priority\":\"中\",\"title\":\"保持规律作息\",\"content\":\"建议每天保证7-8小时睡眠并规律锻炼。\",\"expectedEffect\":\"提升整体健康水平\"}],\"summary\":\"当前健康状态良好，建议继续保持。\"}"}}]}
+                """;
     }
 
     /**
