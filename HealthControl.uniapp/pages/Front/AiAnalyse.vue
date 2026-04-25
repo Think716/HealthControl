@@ -1,30 +1,18 @@
 <template>
     <!-- 顶部导航栏 -->
-    <uni-nav-bar
-        dark
-        :fixed="true"
-        shadow
-        background-color="var(--primary-color)"
-        status-bar
-        left-icon="left"
-        left-text="返回"
-        @clickLeft="goBack"
-        title="AI智能分析"
-    />
+    <uni-nav-bar dark :fixed="true" shadow background-color="var(--primary-color)" status-bar
+        left-icon="left" left-text="返回" @clickLeft="goBack" title="AI智能分析" />
 
     <view class="main-container">
 
         <!-- Tab -->
-        <view v-if="result" class="fixed-tabs">
-            <scroll-view class="tab-scroll" scroll-x>
+        <view v-if="analysisResult" class="fixed-tabs">
+            <scroll-view scroll-x class="tab-scroll">
                 <view class="tab-list">
-                    <view
-                        v-for="tab in tabList"
-                        :key="tab.id"
+                    <view v-for="tab in tabList" :key="tab.id"
                         class="tab-item"
                         :class="{ active: activeTab === tab.id }"
-                        @click="scrollToSection(tab.id)"
-                    >
+                        @click="scrollToSection(tab.id)">
                         <text class="tab-emoji">{{ tab.emoji }}</text>
                         <text class="tab-text">{{ tab.name }}</text>
                     </view>
@@ -34,137 +22,132 @@
 
         <!-- loading -->
         <view v-if="loading" class="loading-container">
-            <view class="loading-animation">
-                <view class="loading-circle">
-                    <view class="loading-inner"></view>
-                </view>
-                <view class="loading-text">AI正在分析健康数据...</view>
-                <view class="loading-tips">
-                    <text>分析最近 {{ params.Days }} 天数据</text>
-                </view>
-            </view>
+            <view class="loading-text">AI分析中...</view>
         </view>
 
         <!-- result -->
-        <view v-else-if="result" class="result-container">
+        <view v-else-if="analysisResult" class="result-container">
 
             <!-- 总评 -->
-            <uni-card id="overview" class="section">
+            <uni-card id="overview">
                 <view class="card-title">🎯 健康总评</view>
 
-                <view class="health-score-section">
-                    <view class="score-circle">
-                        <view class="score-number">{{ result.OverallHealthScore ?? 0 }}</view>
-                        <view class="score-total">/100</view>
-                    </view>
-
-                    <view class="health-level">
-                        <text :class="getHealthLevelClass(result.HealthLevel)">
-                            {{ result.HealthLevel || '-' }}
-                        </text>
-                        <text class="level-desc">健康等级</text>
-                    </view>
+                <view class="score">
+                    {{ analysisResult?.OverallHealthScore ?? 0 }}/100
                 </view>
 
-                <view class="summary-text">
-                    {{ result.Summary || '暂无分析结果' }}
+                <view class="level">
+                    {{ analysisResult?.HealthLevel ?? '未知' }}
+                </view>
+
+                <view class="summary">
+                    {{ analysisResult?.Summary ?? '暂无分析结果' }}
                 </view>
             </uni-card>
 
             <!-- 风险 -->
-            <uni-card id="risks" class="section">
-                <view class="card-title">⚠️ 风险评估</view>
+            <uni-card id="risks">
+                <view class="card-title">⚠️ 风险</view>
 
-                <view v-for="(risk, i) in (result.HealthRisks || [])" :key="i" class="risk-item">
-                    <view class="risk-header">
-                        <text>{{ risk.RiskType }}</text>
-                        <uni-tag :text="risk.RiskLevel" :type="getRiskLevelType(risk.RiskLevel)" />
-                    </view>
+                <view v-for="(risk, index) in analysisResult?.HealthRisks || []"
+                      :key="index" class="item">
 
-                    <view class="risk-description">
-                        {{ risk.Description }}
-                    </view>
+                    <text>{{ risk?.RiskType || '未知风险' }}</text>
+                    <text>{{ risk?.RiskLevel || '-' }}</text>
 
-                    <view class="risk-suggestions">
-                        {{ risk.Suggestions }}
-                    </view>
+                    <view>{{ risk?.Description || '无描述' }}</view>
+                    <view>{{ risk?.Suggestions || '无建议' }}</view>
                 </view>
             </uni-card>
 
             <!-- 营养 -->
-            <uni-card id="nutrition" class="section">
+            <uni-card id="nutrition">
                 <view class="card-title">🥗 营养分析</view>
 
-                <view class="score-bar">
-                    <view
-                        class="score-progress"
-                        :style="{ width: (result.NutritionAnalysis?.NutritionBalanceScore || 0) + '%' }"
-                    />
-                </view>
+                <view>评分：{{ analysisResult?.NutritionAnalysis?.NutritionBalanceScore ?? 0 }}</view>
 
-                <view class="assessment-item">
-                    {{ result.NutritionAnalysis?.CalorieIntakeAssessment }}
+                <view>热量：{{ analysisResult?.NutritionAnalysis?.CalorieIntakeAssessment ?? '暂无' }}</view>
+                <view>蛋白质：{{ analysisResult?.NutritionAnalysis?.ProteinAssessment ?? '暂无' }}</view>
+                <view>碳水：{{ analysisResult?.NutritionAnalysis?.CarbohydrateAssessment ?? '暂无' }}</view>
+                <view>脂肪：{{ analysisResult?.NutritionAnalysis?.FatAssessment ?? '暂无' }}</view>
+
+                <view v-for="(item, i) in analysisResult?.NutritionAnalysis?.DietaryRecommendations || []"
+                      :key="i">
+                    {{ i + 1 }}. {{ item }}
                 </view>
             </uni-card>
 
             <!-- 运动 -->
-            <uni-card id="sport" class="section">
-                <view class="card-title">🏃‍♂️ 运动分析</view>
+            <uni-card id="sport">
+                <view class="card-title">🏃 运动分析</view>
 
-                <view class="score-bar">
-                    <view
-                        class="score-progress"
-                        :style="{ width: (result.SportAnalysis?.ExerciseFrequencyScore || 0) + '%' }"
-                    />
+                <view>评分：{{ analysisResult?.SportAnalysis?.ExerciseFrequencyScore ?? 0 }}</view>
+
+                <view>
+                    运动量：{{ analysisResult?.SportAnalysis?.ExerciseVolumeAssessment ?? '暂无' }}
                 </view>
 
-                <view class="assessment-item">
-                    {{ result.SportAnalysis?.ExerciseVolumeAssessment }}
+                <view>
+                    消耗：{{ analysisResult?.SportAnalysis?.CaloriesBurnedAssessment ?? '暂无' }}
+                </view>
+
+                <view>
+                    多样性：{{ analysisResult?.SportAnalysis?.ExerciseVarietyAssessment ?? '暂无' }}
+                </view>
+
+                <view v-for="(item, i) in analysisResult?.SportAnalysis?.ExerciseRecommendations || []"
+                      :key="i">
+                    {{ i + 1 }}. {{ item }}
                 </view>
             </uni-card>
 
             <!-- 指标 -->
-            <uni-card id="indicators" class="section">
-                <view class="card-title">📊 指标分析</view>
+            <uni-card id="indicators">
+                <view class="card-title">📊 指标</view>
 
-                <view v-for="(item, i) in (result.IndicatorAnalyses || [])" :key="i" class="indicator-item">
-                    <view class="indicator-header">
-                        {{ item.IndicatorName }}
-                        <uni-tag :text="item.Status" />
-                    </view>
+                <view v-for="(ind, i) in analysisResult?.IndicatorAnalyses || []"
+                      :key="i">
 
-                    <view>{{ item.CurrentValue }} / {{ item.NormalRange }}</view>
-                    <view>{{ item.Advice }}</view>
+                    <view>{{ ind?.IndicatorName || '未知指标' }}</view>
+                    <view>值：{{ ind?.CurrentValue ?? '-' }}</view>
+                    <view>范围：{{ ind?.NormalRange ?? '-' }}</view>
+                    <view>趋势：{{ ind?.Trend ?? '-' }}</view>
+                    <view>建议：{{ ind?.Advice ?? '暂无' }}</view>
                 </view>
             </uni-card>
 
             <!-- 建议 -->
-            <uni-card id="recommendations" class="section">
-                <view class="card-title">💡 健康建议</view>
+            <uni-card id="recommendations">
+                <view class="card-title">💡 建议</view>
 
-                <view v-for="(item, i) in (result.Recommendations || [])" :key="i" class="recommendation-card">
-                    <view>{{ item.Title }}</view>
-                    <view>{{ item.Content }}</view>
+                <view v-for="(rec, i) in analysisResult?.Recommendations || []"
+                      :key="i">
+
+                    <view>{{ rec?.Title || '建议' }}</view>
+                    <view>{{ rec?.Content || '' }}</view>
+                    <view>{{ rec?.ExpectedEffect || '' }}</view>
                 </view>
             </uni-card>
 
             <!-- 时间 -->
-            <view class="analysis-time">
-                {{ formatTime(data?.AnalysisTime) }}
+            <view class="time">
+                {{ formatAnalysisTime(Data?.AnalysisTime) }}
             </view>
+
         </view>
 
         <!-- error -->
-        <view v-else-if="error" class="error-container">
-            <text>分析失败</text>
-            <button @click="loadData">重新加载</button>
+        <view v-else-if="error">
+            <view>加载失败</view>
+            <button @click="getAiAnalyseApi">重试</button>
         </view>
 
     </view>
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { Post } from '@/utils/http'
 import { useCommonStore } from '@/store'
 
@@ -172,14 +155,12 @@ const store = useCommonStore()
 
 const loading = ref(false)
 const error = ref(false)
-
-const data = ref(null)
-const result = ref(null)
-
+const analysisResult = ref(null)
+const Data = ref(null)
 const activeTab = ref('overview')
 
-const params = reactive({
-    UserId: store.UserId,
+const analysisData = reactive({
+    UserId: '',
     Days: 7
 })
 
@@ -187,22 +168,28 @@ const tabList = [
     { id: 'overview', name: '总评', emoji: '🎯' },
     { id: 'risks', name: '风险', emoji: '⚠️' },
     { id: 'nutrition', name: '营养', emoji: '🥗' },
-    { id: 'sport', name: '运动', emoji: '🏃‍♂️' },
+    { id: 'sport', name: '运动', emoji: '🏃' },
     { id: 'indicators', name: '指标', emoji: '📊' },
     { id: 'recommendations', name: '建议', emoji: '💡' }
 ]
 
-const loadData = async () => {
+onLoad(() => {
+    analysisData.UserId = store.UserId
+    getAiAnalyseApi()
+})
+
+const getAiAnalyseApi = async () => {
     try {
         loading.value = true
         error.value = false
 
-        const res = await Post('/AiAnalyse/AnalyzeUserHealth', params)
+        const res = await Post('/AiAnalyse/AnalyzeUserHealth', {
+            UserId: store.UserId,
+            Days: 7
+        })
 
-        data.value = res.Data
-        result.value = res.Data?.AnalysisResult || null
-
-        await nextTick()
+        Data.value = res?.Data || {}
+        analysisResult.value = res?.Data?.AnalysisResult || null
 
     } catch (e) {
         error.value = true
@@ -213,94 +200,12 @@ const loadData = async () => {
 
 const goBack = () => uni.navigateBack()
 
-const scrollToSection = (id) => {
-    activeTab.value = id
-
-    uni.pageScrollTo({
-        selector: `#${id}`,
-        duration: 300
-    })
-}
-
-const getHealthLevelClass = (level) => {
-    if (level === '优秀') return 'level-excellent'
-    if (level === '良好') return 'level-good'
-    if (level === '一般') return 'level-average'
-    return 'level-poor'
-}
-
-const getRiskLevelType = (level) => {
-    if (level === '高') return 'error'
-    if (level === '中') return 'warning'
-    return 'success'
-}
-
-const formatTime = (t) => {
-    if (!t) return '-'
+const formatAnalysisTime = (t) => {
+    if (!t) return '暂无时间'
     return new Date(t).toLocaleString()
 }
 
-onMounted(() => {
-    loadData()
-})
-
-onUnmounted(() => {
-    // 清理（避免监听残留）
-    uni.offWindowResize?.()
-})
+const scrollToSection = (id) => {
+    activeTab.value = id
+}
 </script>
-
-<style scoped>
-.main-container {
-    padding: 20rpx;
-}
-
-.fixed-tabs {
-    position: fixed;
-    top: 88rpx;
-    left: 0;
-    right: 0;
-    background: #fff;
-    z-index: 100;
-}
-
-.tab-list {
-    display: flex;
-}
-
-.tab-item {
-    padding: 10rpx 20rpx;
-}
-
-.tab-item.active {
-    color: #1bb919;
-}
-
-.section {
-    margin-top: 120rpx;
-}
-
-.score-bar {
-    height: 10rpx;
-    background: #eee;
-}
-
-.score-progress {
-    height: 100%;
-    background: #4caf50;
-}
-
-.risk-item,
-.indicator-item,
-.recommendation-card {
-    margin-bottom: 20rpx;
-    padding: 20rpx;
-    background: #f8f8f8;
-}
-
-.analysis-time {
-    text-align: center;
-    color: #999;
-    margin-top: 40rpx;
-}
-</style>
