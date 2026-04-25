@@ -2,18 +2,18 @@ package com.example.web.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
- * AI配置（工程标准版）
+ * AI配置（标准绑定版）
  */
 @Data
-@Configuration
+@Component
 @ConfigurationProperties(prefix = "ai")
 public class AiConfig {
 
     /**
-     * DeepSeek API Key（建议放到 yml / 环境变量）
+     * DeepSeek API Key
      */
     private String apiKey;
 
@@ -33,17 +33,17 @@ public class AiConfig {
     private Integer maxTokens = 4000;
 
     /**
-     * 温度（控制随机性）
+     * 温度
      */
     private Double temperature = 0.3;
 
     /**
-     * 是否启用Mock模式
+     * mock模式
      */
     private Boolean mockMode = false;
 
     /**
-     * 请求超时（毫秒）
+     * 超时
      */
     private Integer timeout = 10000;
 }
