@@ -3,7 +3,7 @@ package com.example.web.tools;
 import com.example.web.config.AiConfig;
 import com.example.web.dto.DeepSeekRequestDto;
 import com.example.web.dto.AiHealthAnalysisResponseDto;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +22,10 @@ public class DeepSeekApiClient {
     @Autowired
     private AiConfig aiConfig;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * ⭐ 最终正确返回结构
+     * ⭐ AI分析入口（稳定版）
      */
     public AiHealthAnalysisResponseDto analyzeHealth(String prompt) {
 
@@ -45,28 +44,47 @@ public class DeepSeekApiClient {
                     : HttpUtils.Post(aiConfig.getApiUrl(), request, headers);
 
             if (responseStr == null || responseStr.isBlank()) {
-                responseDto.setSuccess(false);
-                responseDto.setErrorMessage("AI返回为空");
-                return responseDto;
+                return error("AI返回为空");
             }
 
             String content = extractContent(responseStr);
             content = cleanContent(content);
 
             if (content == null || content.isBlank()) {
-                responseDto.setSuccess(false);
-                responseDto.setErrorMessage("AI content为空");
-                return responseDto;
+                return error("AI content为空");
             }
 
-            log.info("AI最终内容：{}", content);
+            log.info("AI原始内容：{}", content);
 
-            // ⭐ 关键：解析内部类
+            // ================== ⭐关键修复点 ==================
+            JsonNode node = objectMapper.readTree(content);
+
             AiHealthAnalysisResponseDto.AnalysisResult result =
-                    objectMapper.readValue(
-                            content,
-                            AiHealthAnalysisResponseDto.AnalysisResult.class
-                    );
+                    new AiHealthAnalysisResponseDto.AnalysisResult();
+
+            // 安全解析（避免 null）
+            result.setScore(node.path("score").asInt(0));
+            result.setEvaluation(node.path("evaluation").asText("未知"));
+
+            // problems
+            List<String> problems = new ArrayList<>();
+            JsonNode pNode = node.path("problems");
+            if (pNode.isArray()) {
+                for (JsonNode p : pNode) {
+                    problems.add(p.asText());
+                }
+            }
+            result.setProblems(problems);
+
+            // suggestions
+            List<String> suggestions = new ArrayList<>();
+            JsonNode sNode = node.path("suggestions");
+            if (sNode.isArray()) {
+                for (JsonNode s : sNode) {
+                    suggestions.add(s.asText());
+                }
+            }
+            result.setSuggestions(suggestions);
 
             responseDto.setSuccess(true);
             responseDto.setAnalysisResult(result);
@@ -76,13 +94,11 @@ public class DeepSeekApiClient {
 
         } catch (Exception e) {
             log.error("AI分析失败", e);
-            responseDto.setSuccess(false);
-            responseDto.setErrorMessage(e.getMessage());
-            return responseDto;
+            return error("AI解析失败：" + e.getMessage());
         }
     }
 
-    // ===================== 请求构建 =====================
+    // ================= 请求构建 =================
     private DeepSeekRequestDto buildRequest(String prompt) {
 
         Map<String, String> format = new HashMap<>();
@@ -108,29 +124,32 @@ public class DeepSeekApiClient {
                 .build();
     }
 
-    // ===================== 提取 content =====================
+    // ================= 提取 AI content =================
     private String extractContent(String responseStr) {
         try {
-            var root = objectMapper.readTree(responseStr);
+            JsonNode root = objectMapper.readTree(responseStr);
             return root.path("choices")
                     .get(0)
                     .path("message")
                     .path("content")
                     .asText(null);
         } catch (Exception e) {
+            log.error("AI响应解析失败", e);
             return null;
         }
     }
 
-    // ===================== 清洗 =====================
+    // ================= 清洗 =================
     private String cleanContent(String content) {
+        if (content == null) return null;
+
         return content
                 .replace("```json", "")
                 .replace("```", "")
                 .trim();
     }
 
-    // ===================== mock =====================
+    // ================= mock =================
     private String readMockResponse() {
         try {
             return Files.readString(Paths.get("external-resources/airesult.txt"));
@@ -140,7 +159,7 @@ public class DeepSeekApiClient {
               "choices": [
                 {
                   "message": {
-                    "content": "{\\"score\\":80,\\"evaluation\\":\\"良好\\",\\"summary\\":\\"正常\\",\\"problems\\":[],\\"suggestions\\":[]}"
+                    "content": "{\\"score\\":85,\\"evaluation\\":\\"良好\\",\\"problems\\":[],\\"suggestions\\":[\\"多喝水\\",\\"规律饮食\\"]}"
                   }
                 }
               ]
@@ -149,11 +168,27 @@ public class DeepSeekApiClient {
         }
     }
 
+    // ================= system prompt =================
     private String getSystemPrompt() {
         return """
-你是专业健康分析AI，只输出JSON，不允许解释。
-必须包含：
-score, evaluation, summary, risks, nutrition, sport, problems, suggestions
+你是专业健康分析AI，只输出JSON，不允许任何解释文字。
+
+必须严格返回：
+{
+  "score": 0-100,
+  "evaluation": "良好|一般|较差",
+  "problems": ["问题1"],
+  "suggestions": ["建议1","建议2"]
+}
 """;
+    }
+
+    // ================= error =================
+    private AiHealthAnalysisResponseDto error(String msg) {
+        AiHealthAnalysisResponseDto dto = new AiHealthAnalysisResponseDto();
+        dto.setSuccess(false);
+        dto.setErrorMessage(msg);
+        dto.setAnalysisTime(LocalDateTime.now());
+        return dto;
     }
 }
