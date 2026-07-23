@@ -123,6 +123,36 @@
                             </div>
                         </transition>
                     </div>
+                    <!-- 运动管理 -->
+                    <div class="menu-group">
+                        <div class="menu-item submenu-header" :class="{ expanded: expandedMenus.sportManagement }"
+                            @click="toggleSubmenu('sportManagement')">
+                            <div class="menu-content">
+                                <span class="menu-icon">运</span>
+                                <span class="menu-text">运动管理</span>
+                                <span class="expand-icon" :class="{ rotated: expandedMenus.sportManagement }">▼</span>
+                            </div>
+                        </div>
+                        <transition name="submenu">
+                            <div v-show="expandedMenus.sportManagement" class="submenu-container">
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/SportList') }"
+                                    @click="navigateTo('/Admin/SportList')">
+                                    <span class="submenu-icon">项</span>
+                                    <span class="submenu-text">运动项目</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/SportUnitList') }"
+                                    @click="navigateTo('/Admin/SportUnitList')">
+                                    <span class="submenu-icon">量</span>
+                                    <span class="submenu-text">运动单位</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/FitnessVideoList') }"
+                                    @click="navigateTo('/Admin/FitnessVideoList')">
+                                    <span class="submenu-icon">AI</span>
+                                    <span class="submenu-text">AI健身视频</span>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
 
                     <!-- 健康管理 -->
                     <div class="menu-group">
@@ -184,6 +214,47 @@
                                     @click="navigateTo('/Admin/HealthArticleTypeList')">
                                     <span class="submenu-icon">🏷️</span>
                                     <span class="submenu-text">知识分类</span>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <!-- 健康社区 -->
+                    <div class="menu-group">
+                        <div class="menu-item submenu-header" :class="{ expanded: expandedMenus.communityManagement }"
+                            @click="toggleSubmenu('communityManagement')">
+                            <div class="menu-content">
+                                <span class="menu-icon">社</span>
+                                <span class="menu-text">健康社区</span>
+                                <span class="expand-icon" :class="{ rotated: expandedMenus.communityManagement }">▶</span>
+                            </div>
+                        </div>
+                        <transition name="submenu">
+                            <div v-show="expandedMenus.communityManagement" class="submenu-container">
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/CommunityPostList') }"
+                                    @click="navigateTo('/Admin/CommunityPostList')">
+                                    <span class="submenu-icon">动</span>
+                                    <span class="submenu-text">动态管理</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/CommunityCommentList') }"
+                                    @click="navigateTo('/Admin/CommunityCommentList')">
+                                    <span class="submenu-icon">评</span>
+                                    <span class="submenu-text">评论管理</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/CommunityTagList') }"
+                                    @click="navigateTo('/Admin/CommunityTagList')">
+                                    <span class="submenu-icon">签</span>
+                                    <span class="submenu-text">标签管理</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/CommunityReportList') }"
+                                    @click="navigateTo('/Admin/CommunityReportList')">
+                                    <span class="submenu-icon">举</span>
+                                    <span class="submenu-text">举报管理</span>
+                                </div>
+                                <div class="submenu-item" :class="{ active: isActiveRoute('/Admin/CommunityStats') }"
+                                    @click="navigateTo('/Admin/CommunityStats')">
+                                    <span class="submenu-icon">数</span>
+                                    <span class="submenu-text">社区统计</span>
                                 </div>
                             </div>
                         </transition>
@@ -264,6 +335,7 @@ const expandedMenus = ref({
     sportManagement: false,
     healthManagement: false,
     knowledgeManagement: false,
+    communityManagement: false,
     interactionManagement: false
 })
 

@@ -108,6 +108,10 @@ public class Recipe extends BaseEntity {
     @TableField(value = "AuditReply", updateStrategy = FieldStrategy.IGNORED)
     private String AuditReply;
 
+    @JsonProperty("IsRecommend")
+    @TableField(value = "IsRecommend", updateStrategy = FieldStrategy.IGNORED)
+    private Integer IsRecommend;
+
     /**
      * 把食谱实体转换成食谱传输模型
      */

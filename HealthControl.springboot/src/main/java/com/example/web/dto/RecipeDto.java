@@ -108,6 +108,9 @@ public class RecipeDto extends BaseDto {
     @JsonProperty("AuditReply")
     private String AuditReply;
 
+    @JsonProperty("IsRecommend")
+    private Integer IsRecommend;
+
     /**
      * 相似度
      */

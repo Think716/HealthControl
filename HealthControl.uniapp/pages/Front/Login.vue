@@ -96,7 +96,8 @@ const commonStore = useCommonStore()
 
 // 获取角色列表
 const GetRoleTypeListApi = async () => {
-    const { Data: { Items } } = await Post("/Select/RoleType")
+    const { Data } = await Post("/Select/RoleType")
+    const Items = Data?.Items || [];
     RoleTypeList.value = Items.filter(item => item.Code != 1).map(item => ({
         text: item.Name,
         value: item.Code

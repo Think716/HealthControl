@@ -5,7 +5,6 @@ import com.example.web.dto.AiHealthAnalysisResponseDto;
 import com.example.web.service.AiAnalyseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -20,10 +19,6 @@ public class AiAnalyseController {
      * 用户健康分析（推荐接口）
      */
     @PostMapping("/AnalyzeUserHealth")
-    @Cacheable(
-            value = "aiHealthAnalysis",
-            key = "#input.userId + '_' + (#input.days == null ? 7 : #input.days)"
-    )
     public AiHealthAnalysisResponseDto analyzeUserHealth(
             @RequestBody AiAnalyzeUserHealthDto input) {
 
@@ -45,10 +40,6 @@ public class AiAnalyseController {
      * 自定义数据分析
      */
     @PostMapping("/AnalyzeHealthData")
-    @Cacheable(
-            value = "aiHealthAnalysis",
-            key = "#input.hashCode()"
-    )
     public AiHealthAnalysisResponseDto analyzeHealthData(
             @RequestBody com.example.web.dto.AiHealthAnalysisRequestDto input) {
 

@@ -10,8 +10,8 @@ import java.util.Map;
 public class WeiXinUtils {
 
     public static final String WECHAT_SENDMSG_URL = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?";
-    public static final String APP_ID = "你的Appid";
-    public static final String APP_SECRET = "你的密钥";
+    public static final String APP_ID = "wxd52e292501e6f7c4";
+    public static final String APP_SECRET = "cc40d7f73fc4654c66352b5a3e9ec3b6";
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -37,7 +37,20 @@ public class WeiXinUtils {
                 + "&js_code=" + code + "&grant_type=authorization_code";
         String result = HttpUtils.Get(apiUrl, null);
         JsonNode jsonNode = objectMapper.readTree(result);
-        return jsonNode.get("openid").asText();
+        
+        // 检查是否返回了错误信息
+        if (jsonNode.get("errcode") != null && jsonNode.get("errcode").asInt() != 0) {
+            String errMsg = jsonNode.get("errmsg").asText();
+            throw new RuntimeException("微信API返回错误: " + errMsg);
+        }
+        
+        // 检查openid是否存在
+        JsonNode openIdNode = jsonNode.get("openid");
+        if (openIdNode == null) {
+            throw new RuntimeException("未能获取到openid，响应数据: " + result);
+        }
+        
+        return openIdNode.asText();
     }
 
     /**

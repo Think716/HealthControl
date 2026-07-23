@@ -40,6 +40,10 @@ public class InterceptorConfig implements WebMvcConfigurer {
      */
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
             registry.addResourceHandler("/**")
-                    .addResourceLocations("classpath:/static/", "file:external-resources/");
+                    .addResourceLocations(
+                            "classpath:/static/",
+                            "file:external-resources/",
+                            "file:external-resources/_legacy-uploads/"
+                    );
     }
 }

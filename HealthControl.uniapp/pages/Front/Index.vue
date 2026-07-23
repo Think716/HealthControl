@@ -95,6 +95,14 @@
                         <view class="action-icon diet">🍎</view>
                         <text class="action-label">饮食记录</text>
                     </view>
+                    <view class="action-item" @click="ToSportRecord()">
+                        <view class="action-icon sport">🏃</view>
+                        <text class="action-label">运动打卡</text>
+                    </view>
+                    <view class="action-item" @click="ToFitnessVideoList()">
+                        <view class="action-icon sport">AI</view>
+                        <text class="action-label">AI健身视频</text>
+                    </view>
 
                     <view class="action-item" @click="ToHealthNoticeList()">
                         <view class="action-icon reminder">⏰</view>
@@ -200,6 +208,11 @@ const ToDietRecordList = () => {
 const ToSportRecord = () => {
     uni.navigateTo({
         url: '/pages/Front/SportRecordList'
+    });
+};
+const ToFitnessVideoList = () => {
+    uni.navigateTo({
+        url: '/pages/Front/FitnessVideoList'
     });
 };
 

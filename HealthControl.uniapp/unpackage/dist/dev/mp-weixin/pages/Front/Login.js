@@ -23,12 +23,13 @@ const _sfc_main = {
     const RoleTypeList = common_vendor.ref([]);
     const commonStore = store_index.useCommonStore();
     const GetRoleTypeListApi = async () => {
-      const { Data: { Items } } = await utils_http.Post("/Select/RoleType");
+      const { Data } = await utils_http.Post("/Select/RoleType");
+      const Items = (Data == null ? void 0 : Data.Items) || [];
       RoleTypeList.value = Items.filter((item) => item.Code != 1).map((item) => ({
         text: item.Name,
         value: item.Code
       }));
-      common_vendor.index.__f__("log", "at pages/Front/Login.vue:104", RoleTypeList.value);
+      common_vendor.index.__f__("log", "at pages/Front/Login.vue:105", RoleTypeList.value);
     };
     const Login = async () => {
       if (!formData.value.UserName) {

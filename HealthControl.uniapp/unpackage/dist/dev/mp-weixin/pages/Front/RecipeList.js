@@ -43,11 +43,8 @@ const _sfc_main = {
     const GetRecipeListApi = async () => {
       try {
         loadStatus.value = "loading";
-        let {
-          Data: {
-            Items
-          }
-        } = await utils_http.Post("/Recipe/List", where);
+        const { Data } = await utils_http.Post("/Recipe/List", where);
+        const Items = (Data == null ? void 0 : Data.Items) || [];
         const processedItems = Items.map((recipe) => ({
           ...recipe,
           imageList: recipe.ImageUrls ? recipe.ImageUrls.split(",").filter((url) => url.trim()).slice(0, 4) : []
@@ -55,7 +52,7 @@ const _sfc_main = {
         RecipeList.value = processedItems;
         loadStatus.value = Items.length > 0 ? "more" : "noMore";
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/RecipeList.vue:127", "获取食谱列表失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/RecipeList.vue:124", "获取食谱列表失败:", error);
         loadStatus.value = "more";
       }
     };

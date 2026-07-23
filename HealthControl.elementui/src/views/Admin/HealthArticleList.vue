@@ -97,7 +97,7 @@
 
                     <el-col :span="24">
                         <el-form-item label="封面" prop="Cover">
-                            <UploadImages :limit="1" v-model="formData.Cover"></UploadImages>
+                            <UploadImages :limit="1" category="diet-covers" v-model="formData.Cover"></UploadImages>
                         </el-form-item>
                     </el-col>
 
@@ -118,7 +118,7 @@
 
                     <el-col :span="24">
                         <el-form-item label="内容" prop="Content">
-                            <AIRichText v-model="formData.Content"></AIRichText>
+                            <AIRichText category="health-article-content" v-model="formData.Content"></AIRichText>
                         </el-form-item>
                     </el-col>
                 </el-row>

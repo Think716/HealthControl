@@ -1,11 +1,10 @@
 server:
-  ip: http://localhost:7245 
-  tomcat: #tomact 服务器的配置
-    relaxed-query-chars: '|,{,},[,]'  #进行get请求到时候 如何参数包含[,{,},] 认为是正常的
-  port: 7245 # 端口
-#数据库名：mysql，用户名root，密码123456
+  ip: http://localhost:7245
+  port: 7245
+  tomcat:
+    relaxed-query-chars: '|,{,},[,]'
+
 spring:
-  #配置邮箱信息
   mail:
     username: 3056802670@qq.com
     password: jhtrzsovfmaebdgg
@@ -15,26 +14,37 @@ spring:
         smtp:
           ssl:
             enable: true
-  servlet:
-    multipart: #文件的上传配置
-      max-request-size: 10000MB #请求的最大报文长度不能超过10000MB
-      max-file-size: 10024MB #上传的文件最大不能超过10024MB
-  datasource: #数据库的配置
-    username: root #数据库的账号
-    password: 1234 #数据库的密码
-    url: jdbc:mysql://localhost:3306/HealthControl?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-  jackson: # json序列号配置
-    property-naming-strategy: UPPER_CAMEL_CASE #设置大写开头的命名风格
-    date-format: yyyy-MM-dd HH:mm:ss #设置标准的时间格式
-    time-zone: Asia/Shanghai #时间对于的时区
 
-mybatis-plus: #操作数据库的ORM框架 mybatis
-  mapper-locations: mapper/*.xml #配置对于的mapper文件位置
-  global-config: #mybatis的全局配置
-    db-config: #数据库的配置
-      table-prefix:   #表前面是否加前缀  如果不配置为空 会导致查询的sql表前面带有特定 前缀
+  servlet:
+    multipart:
+      max-request-size: 10000MB
+      max-file-size: 10024MB
+
+  datasource:
+    username: root
+    password: 1234
+    url: jdbc:mysql://localhost:3306/HealthControl?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+
+  jackson:
+    property-naming-strategy: LOWER_CAMEL_CASE
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  mapper-locations: mapper/*.xml
+  global-config:
+    db-config:
+      table-prefix:
   configuration:
-    #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
-    map-underscore-to-camel-case: false         #是否转换成大小写
-  type-aliases-package: com.example.web.entity  #实体存储的包位置
+    map-underscore-to-camel-case: false
+  type-aliases-package: com.example.web.entity
+
+# ===================== AI配置（关键修复）=====================
+ai:
+  apiKey: sk-857d403ee42744718450433f0d234deb
+  apiUrl: https://api.deepseek.com/chat/completions
+  model: deepseek-chat
+  maxTokens: 4000
+  temperature: 0.3
+  mockMode: false

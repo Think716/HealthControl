@@ -111,6 +111,38 @@
             </uni-card>
 
             <!-- 指标 -->
+            <uni-card id="sport" :is-shadow="true" style="margin-top:20rpx">
+                <view class="card-title">🏃 运动分析</view>
+                <view class="info-card">
+                    <view class="info-row">
+                        <text>运动评分</text>
+                        <text class="green">{{ analysisResult.SportAnalysis.ExerciseFrequencyScore }}</text>
+                    </view>
+                    <view class="info-row">
+                        <text>运动量</text>
+                        <text>{{ analysisResult.SportAnalysis.ExerciseVolumeAssessment }}</text>
+                    </view>
+                    <view class="info-row">
+                        <text>热量消耗</text>
+                        <text>{{ analysisResult.SportAnalysis.CaloriesBurnedAssessment }}</text>
+                    </view>
+                    <view class="info-row">
+                        <text>运动多样性</text>
+                        <text>{{ analysisResult.SportAnalysis.ExerciseVarietyAssessment }}</text>
+                    </view>
+                </view>
+
+                <view class="section-subtitle">运动建议</view>
+                <view
+                    v-for="(item, i) in analysisResult.SportAnalysis.ExerciseRecommendations"
+                    :key="i"
+                    class="recommend-item"
+                >
+                    {{ i + 1 }}. {{ item }}
+                </view>
+            </uni-card>
+
+            <!-- 指标 -->
             <uni-card id="indicators" :is-shadow="true" style="margin-top:20rpx">
                 <view class="card-title">📊 健康指标</view>
                 
@@ -157,6 +189,7 @@
         <!-- error -->
         <view v-else-if="error" class="error-box">
             <view class="error-text">AI分析失败</view>
+            <view class="error-message">{{ errorMsg }}</view>
             <button class="retry-btn" @click="getAiAnalyseApi">重新分析</button>
         </view>
     </view>
@@ -172,6 +205,7 @@ const store = useCommonStore()
 
 const loading = ref(false)
 const error = ref(false)
+const errorMsg = ref('')
 const analysisResult = ref(null)
 const Data = ref({})
 const activeTab = ref('overview')
@@ -185,6 +219,7 @@ const tabList = [
     { id: 'overview', name: '总评', emoji: '🎯' },
     { id: 'risks', name: '风险', emoji: '⚠️' },
     { id: 'nutrition', name: '营养', emoji: '🥗' },
+    { id: 'sport', name: '运动', emoji: '🏃' },
     { id: 'indicators', name: '指标', emoji: '📊' },
     { id: 'recommendations', name: '建议', emoji: '💡' }
 ]
@@ -199,6 +234,8 @@ const getAiAnalyseApi = async () => {
     try {
         loading.value = true
         error.value = false
+        errorMsg.value = ''
+        analysisResult.value = null
 
         const res = await Post('/AiAnalyse/AnalyzeUserHealth', {
             UserId: store.UserId,
@@ -212,63 +249,21 @@ const getAiAnalyseApi = async () => {
         }
 
         const responseData = res?.Data || res?.data || {}
+        if (responseData?.Success === false || responseData?.success === false) {
+            throw new Error(responseData?.ErrorMessage || responseData?.errorMessage || 'AI分析失败')
+        }
+
         const result = responseData?.AnalysisResult || responseData?.analysisResult || {}
+        if (!result || Object.keys(result).length === 0) {
+            throw new Error('AI接口没有返回分析结果')
+        }
 
         Data.value = responseData
         analysisResult.value = normalizeAnalysisResult(result)
     } catch (e) {
         console.error('AI分析失败：', e)
         error.value = true
-        
-        // 本地模拟数据
-        const mockData = {
-            AnalysisTime: new Date(),
-            AnalysisResult: {
-                OverallHealthScore: 85,
-                HealthLevel: '良好',
-                Summary: '整体健康状态较好，但需要注意规律作息与运动习惯。',
-                HealthRisks: [
-                    {
-                        RiskType: '熬夜风险',
-                        RiskLevel: '中',
-                        Description: '近期睡眠不足。',
-                        Suggestions: '建议晚上11点前睡觉。'
-                    }
-                ],
-                NutritionAnalysis: {
-                    NutritionBalanceScore: 82,
-                    CalorieIntakeAssessment: '热量摄入正常',
-                    ProteinAssessment: '蛋白质摄入良好',
-                    CarbohydrateAssessment: '碳水略高',
-                    FatAssessment: '脂肪正常',
-                    DietaryRecommendations: ['减少高糖饮料', '增加水果摄入', '保持规律早餐']
-                },
-                IndicatorAnalyses: [
-                    {
-                        IndicatorName: 'BMI',
-                        CurrentValue: '23.1',
-                        NormalRange: '18.5-24',
-                        Trend: '稳定',
-                        Advice: '继续保持'
-                    }
-                ],
-                Recommendations: [
-                    {
-                        Title: '规律作息',
-                        Content: '建议每天保持7小时睡眠。',
-                        ExpectedEffect: '改善精神状态'
-                    },
-                    {
-                        Title: '增加运动',
-                        Content: '建议每周坚持锻炼。',
-                        ExpectedEffect: '增强身体素质'
-                    }
-                ]
-            }
-        }
-
-        Data.value = mockData
-        analysisResult.value = normalizeAnalysisResult(mockData.AnalysisResult)
+        errorMsg.value = e?.message || e?.Msg || '请检查后端服务、AI配置或网络连接'
     } finally {
         loading.value = false
     }
@@ -292,8 +287,8 @@ const normalizeAnalysisResult = (raw) => {
     const parsedRaw = tryParseAiContent(raw)
     if (!parsedRaw || typeof parsedRaw !== 'object') {
         return {
-            OverallHealthScore: 85,
-            HealthLevel: '良好',
+            OverallHealthScore: 0,
+            HealthLevel: '暂无',
             Summary: '暂无分析结果',
             HealthRisks: [],
             NutritionAnalysis: {
@@ -304,66 +299,78 @@ const normalizeAnalysisResult = (raw) => {
                 FatAssessment: '',
                 DietaryRecommendations: []
             },
-            IndicatorAnalyses: [
-                {
-                    IndicatorName: 'BMI',
-                    CurrentValue: '23.1',
-                    NormalRange: '18.5-24',
-                    Trend: '稳定',
-                    Advice: '继续保持'
-                }
-            ],
-            Recommendations: [
-                {
-                    Title: '规律作息',
-                    Content: '建议每天保持7小时睡眠。',
-                    ExpectedEffect: '改善精神状态'
-                },
-                {
-                    Title: '增加运动',
-                    Content: '建议每周坚持锻炼。',
-                    ExpectedEffect: '增强身体素质'
-                }
-            ]
+            SportAnalysis: {
+                ExerciseFrequencyScore: 0,
+                ExerciseVolumeAssessment: '',
+                CaloriesBurnedAssessment: '',
+                ExerciseVarietyAssessment: '',
+                ExerciseRecommendations: []
+            },
+            IndicatorAnalyses: [],
+            Recommendations: []
         }
     }
 
-    const score = parsedRaw.OverallHealthScore ?? parsedRaw.overallHealthScore ?? parsedRaw.score ?? 85
-    const level = parsedRaw.HealthLevel ?? parsedRaw.healthLevel ?? parsedRaw.evaluation ?? '良好'
+    const score = parsedRaw.OverallHealthScore ?? parsedRaw.overallHealthScore ?? parsedRaw.Score ?? parsedRaw.score ?? 0
+    const level = parsedRaw.HealthLevel ?? parsedRaw.healthLevel ?? parsedRaw.Evaluation ?? parsedRaw.evaluation ?? '暂无'
     const summary = parsedRaw.Summary ?? parsedRaw.summary ?? '暂无分析结果'
 
     // 风险
-    const risks = parsedRaw.HealthRisks ?? parsedRaw.healthRisks ?? parsedRaw.risks ??
-        (parsedRaw.problems?.map(item => ({
+    const rawRisks = parsedRaw.HealthRisks ?? parsedRaw.healthRisks ?? parsedRaw.Risks ?? parsedRaw.risks ??
+        ((parsedRaw.Problems ?? parsedRaw.problems)?.map(item => ({
             RiskType: '健康风险',
             RiskLevel: '中',
             Description: item,
             Suggestions: '建议调整生活习惯'
         })) || [])
+    const risks = rawRisks.map(item => ({
+        RiskType: item.RiskType ?? item.riskType ?? item.Type ?? item.type ?? '健康风险',
+        RiskLevel: item.RiskLevel ?? item.riskLevel ?? item.Level ?? item.level ?? '中',
+        Description: item.Description ?? item.description ?? '',
+        Suggestions: item.Suggestions ?? item.suggestions ?? item.Advice ?? item.advice ?? ''
+    }))
 
     // 综合建议
-    const recommendations = parsedRaw.Recommendations ?? parsedRaw.recommendations ?? parsedRaw.suggestions?.map(item => ({
+    const sourceSuggestions = parsedRaw.Suggestions ?? parsedRaw.suggestions
+    const rawRecommendations = parsedRaw.Recommendations ?? parsedRaw.recommendations ?? sourceSuggestions?.map(item => ({
         Title: '健康建议',
         Content: item,
         ExpectedEffect: '改善健康状态'
-    })) ?? [
-        {
-            Title: '规律作息',
-            Content: '建议每天保持7小时睡眠',
-            ExpectedEffect: '改善精神状态'
-        }
-    ]
+    })) ?? []
+    const recommendations = rawRecommendations.map(item => ({
+        Title: item.Title ?? item.title ?? '健康建议',
+        Content: item.Content ?? item.content ?? '',
+        ExpectedEffect: item.ExpectedEffect ?? item.expectedEffect ?? ''
+    }))
 
     // 营养分析
-    const nutrition = parsedRaw.NutritionAnalysis ?? parsedRaw.nutritionAnalysis ?? {}
+    const nutrition = parsedRaw.NutritionAnalysis ?? parsedRaw.nutritionAnalysis ?? parsedRaw.Nutrition ?? parsedRaw.nutrition ?? {}
     const nutritionResult = {
-        NutritionBalanceScore: nutrition.NutritionBalanceScore ?? score ?? 0,
-        CalorieIntakeAssessment: nutrition.CalorieIntakeAssessment ?? '热量正常',
-        ProteinAssessment: nutrition.ProteinAssessment ?? '蛋白质正常',
-        CarbohydrateAssessment: nutrition.CarbohydrateAssessment ?? '碳水正常',
-        FatAssessment: nutrition.FatAssessment ?? '脂肪正常',
-        DietaryRecommendations: nutrition.DietaryRecommendations ?? parsedRaw.suggestions ?? []
+        NutritionBalanceScore: nutrition.NutritionBalanceScore ?? nutrition.nutritionBalanceScore ?? score ?? 0,
+        CalorieIntakeAssessment: nutrition.CalorieIntakeAssessment ?? nutrition.calorieIntakeAssessment ?? nutrition.Evaluation ?? nutrition.evaluation ?? '',
+        ProteinAssessment: nutrition.ProteinAssessment ?? nutrition.proteinAssessment ?? '',
+        CarbohydrateAssessment: nutrition.CarbohydrateAssessment ?? nutrition.carbohydrateAssessment ?? '',
+        FatAssessment: nutrition.FatAssessment ?? nutrition.fatAssessment ?? '',
+        DietaryRecommendations: nutrition.DietaryRecommendations ?? nutrition.dietaryRecommendations ?? sourceSuggestions ?? []
     }
+
+    const sport = parsedRaw.SportAnalysis ?? parsedRaw.sportAnalysis ?? parsedRaw.Sport ?? parsedRaw.sport ?? {}
+    const sportResult = {
+        ExerciseFrequencyScore: sport.ExerciseFrequencyScore ?? sport.exerciseFrequencyScore ?? 0,
+        ExerciseVolumeAssessment: sport.ExerciseVolumeAssessment ?? sport.exerciseVolumeAssessment ?? sport.Evaluation ?? sport.evaluation ?? '',
+        CaloriesBurnedAssessment: sport.CaloriesBurnedAssessment ?? sport.caloriesBurnedAssessment ?? '',
+        ExerciseVarietyAssessment: sport.ExerciseVarietyAssessment ?? sport.exerciseVarietyAssessment ?? '',
+        ExerciseRecommendations: sport.ExerciseRecommendations ?? sport.exerciseRecommendations ?? []
+    }
+
+    const rawIndicators = parsedRaw.IndicatorAnalyses ?? parsedRaw.indicatorAnalyses ?? []
+    const indicatorAnalyses = rawIndicators.map(item => ({
+        IndicatorName: item.IndicatorName ?? item.indicatorName ?? '',
+        CurrentValue: item.CurrentValue ?? item.currentValue ?? '',
+        NormalRange: item.NormalRange ?? item.normalRange ?? '',
+        Trend: item.Trend ?? item.trend ?? item.Status ?? item.status ?? '',
+        Advice: item.Advice ?? item.advice ?? ''
+    }))
 
     return {
         OverallHealthScore: score,
@@ -371,15 +378,8 @@ const normalizeAnalysisResult = (raw) => {
         Summary: summary,
         HealthRisks: risks,
         NutritionAnalysis: nutritionResult,
-        IndicatorAnalyses: parsedRaw.IndicatorAnalyses ?? parsedRaw.indicatorAnalyses ?? [
-            {
-                IndicatorName: 'BMI',
-                CurrentValue: '23.1',
-                NormalRange: '18.5-24',
-                Trend: '稳定',
-                Advice: '继续保持'
-            }
-        ],
+        SportAnalysis: sportResult,
+        IndicatorAnalyses: indicatorAnalyses,
         Recommendations: recommendations
     }
 }
@@ -556,15 +556,15 @@ const formatAnalysisTime = (t) => {
     color: #fff;
 }
 
-.高 {
+.high {
     background: #ff4d4f;
 }
 
-.中 {
+.mideum {
     background: #faad14;
 }
 
-.低 {
+.low {
     background: #52c41a;
 }
 
@@ -626,6 +626,15 @@ const formatAnalysisTime = (t) => {
 .error-text {
     font-size: 34rpx;
     margin-bottom: 30rpx;
+}
+
+.error-message {
+    max-width: 620rpx;
+    margin-bottom: 24rpx;
+    color: #666;
+    font-size: 26rpx;
+    line-height: 1.6;
+    text-align: center;
 }
 
 .retry-btn {

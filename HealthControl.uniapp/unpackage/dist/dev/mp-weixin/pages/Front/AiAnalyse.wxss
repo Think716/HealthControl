@@ -1,526 +1,198 @@
-/* 需要放到文件最上面 */
-/* 水平间距 */
-/* 水平间距 */
-/*
- 以下变量是默认值，如不需要修改可以不用给下面的变量重新赋值
- */
-/* 水平间距 */
-/* 主容器样式 */
-.main-container.data-v-3b5a3068 {
-  padding: 0rpx 20rpx 30rpx 20rpx;
-  min-height: 100vh;
-  background-color: #fafafa;
-}
 
-/* 固定Tab导航样式 */
+.main-container.data-v-3b5a3068 {
+    min-height: 100vh;
+    background: #f5f7fb;
+    padding-bottom: 40rpx;
+}
 .fixed-tabs.data-v-3b5a3068 {
-  position: fixed;
-  top: 180rpx;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0.98);
-  border-bottom: 1rpx solid #e5e5e5;
-  padding: 12rpx 0;
+    position: -webkit-sticky;
+    position: sticky;
+    top: var(--status-bar-height);
+    z-index: 10;
+    background: #ffffff;
+    border-bottom: 1px solid #eee;
 }
 .tab-scroll.data-v-3b5a3068 {
-  width: 100%;
+    white-space: nowrap;
 }
 .tab-list.data-v-3b5a3068 {
-  display: flex;
-  padding: 0 20rpx;
-  gap: 16rpx;
-  white-space: nowrap;
+    display: flex;
+    padding: 20rpx;
 }
 .tab-item.data-v-3b5a3068 {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10rpx 16rpx;
-  border-radius: 12rpx;
-  background: transparent;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  min-width: 90rpx;
+    display: flex;
+    align-items: center;
+    padding: 14rpx 28rpx;
+    margin-right: 20rpx;
+    border-radius: 999rpx;
+    background: #f2f2f2;
+    font-size: 28rpx;
+    transition: all 0.2s;
 }
 .tab-item.active.data-v-3b5a3068 {
-  background: #1bb919;
-  color: white;
+    background: #00c48c;
+    color: #fff;
 }
 .tab-emoji.data-v-3b5a3068 {
-  font-size: 24rpx;
-  margin-bottom: 4rpx;
+    margin-right: 8rpx;
 }
-.tab-text.data-v-3b5a3068 {
-  font-size: 20rpx;
-  font-weight: 500;
-  color: #666;
-}
-.tab-item.active .tab-text.data-v-3b5a3068 {
-  color: white;
-}
-
-/* 为内容区域添加顶部间距，避免被fixed tab遮挡 */
-.result-container.data-v-3b5a3068 {
-  padding-top: 220rpx;
-}
-.section.data-v-3b5a3068 {
-  scroll-margin-top: 280rpx;
-  margin-bottom: 30rpx;
-}
-
-/* 加载动画样式 */
 .loading-container.data-v-3b5a3068 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60vh;
 }
-.loading-animation.data-v-3b5a3068 {
-  text-align: center;
+.loading-box.data-v-3b5a3068 {
+    text-align: center;
 }
-.loading-circle.data-v-3b5a3068 {
-  width: 120rpx;
-  height: 120rpx;
-  border: 6rpx solid #e0e0e0;
-  border-top: 6rpx solid #4caf50;
-  border-radius: 50%;
-  animation: spin-3b5a3068 1s linear infinite;
-  margin: 0 auto 30rpx auto;
+.loading-title.data-v-3b5a3068 {
+    font-size: 34rpx;
+    margin-bottom: 30rpx;
+    font-weight: bold;
 }
-.loading-inner.data-v-3b5a3068 {
-  width: 80rpx;
-  height: 80rpx;
-  border: 4rpx solid transparent;
-  border-top: 4rpx solid #66bb6a;
-  border-radius: 50%;
-  margin: 16rpx auto;
-  animation: spin-3b5a3068 0.8s linear infinite reverse;
-}
-@keyframes spin-3b5a3068 {
-0% {
-    transform: rotate(0deg);
-}
-100% {
-    transform: rotate(360deg);
-}
-}
-.loading-text.data-v-3b5a3068 {
-  font-size: 32rpx;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 20rpx;
-}
-.loading-tips.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #666;
-}
-
-/* 通用卡片头部样式 */
-.card-header.data-v-3b5a3068 {
-  padding: 20rpx 0 20rpx 0;
-  border-bottom: 1rpx solid #eee;
-  margin-bottom: 24rpx;
+.result-container.data-v-3b5a3068 {
+    padding: 20rpx;
 }
 .card-title.data-v-3b5a3068 {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
+    font-size: 34rpx;
+    font-weight: bold;
+    margin-bottom: 24rpx;
 }
-
-/* 健康总评样式 */
-.health-overview.data-v-3b5a3068 {
-  background: #fff;
-  color: #333;
-  border-radius: 16rpx;
-  padding: 32rpx;
-  border: 1rpx solid #eee;
-  margin: 20rpx 0;
-}
-.health-score-section.data-v-3b5a3068 {
-  display: flex;
-  align-items: center;
-  margin-bottom: 30rpx;
+.overview-box.data-v-3b5a3068 {
+    display: flex;
+    align-items: center;
 }
 .score-circle.data-v-3b5a3068 {
-  width: 100rpx;
-  height: 100rpx;
-  background: #f8f9fa;
-  border: 2rpx solid #007bff;
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-right: 32rpx;
+    width: 180rpx;
+    height: 180rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00c48c, #00a6ff);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
 }
 .score-number.data-v-3b5a3068 {
-  font-size: 40rpx;
-  font-weight: bold;
-  line-height: 1;
-  color: #007bff;
+    font-size: 56rpx;
+    font-weight: bold;
 }
 .score-total.data-v-3b5a3068 {
-  font-size: 20rpx;
-  color: #666;
+    font-size: 24rpx;
 }
 .health-level.data-v-3b5a3068 {
-  flex: 1;
+    margin-left: 40rpx;
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #00c48c;
 }
-.level-text.data-v-3b5a3068 {
-  font-size: 32rpx;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 8rpx;
-  color: #333;
+.summary.data-v-3b5a3068 {
+    margin-top: 30rpx;
+    line-height: 1.8;
+    color: #666;
 }
-.level-desc.data-v-3b5a3068 {
-  font-size: 24rpx;
-  color: #666;
-}
-.summary-text.data-v-3b5a3068 {
-  font-size: 26rpx;
-  line-height: 1.5;
-  color: #555;
-  margin-top: 20rpx;
-}
-
-/* 风险评估样式 */
-.risk-list.data-v-3b5a3068 {
-  space-y: 20rpx;
-}
-.risk-item.data-v-3b5a3068 {
-  padding: 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-  border: 1rpx solid #eee;
-  border-left: 3rpx solid #666;
+.risk-item.data-v-3b5a3068,
+.indicator-item.data-v-3b5a3068,
+.advice-item.data-v-3b5a3068 {
+    background: #fafafa;
+    padding: 24rpx;
+    border-radius: 20rpx;
+    margin-bottom: 20rpx;
 }
 .risk-header.data-v-3b5a3068 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16rpx;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16rpx;
 }
-.risk-info.data-v-3b5a3068 {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
+.risk-name.data-v-3b5a3068,
+.indicator-title.data-v-3b5a3068,
+.advice-title.data-v-3b5a3068 {
+    font-size: 32rpx;
+    font-weight: bold;
 }
-.risk-emoji.data-v-3b5a3068 {
-  font-size: 28rpx;
+.risk-level.data-v-3b5a3068 {
+    padding: 4rpx 18rpx;
+    border-radius: 999rpx;
+    font-size: 24rpx;
+    color: #fff;
 }
-.risk-type.data-v-3b5a3068 {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
+.high.data-v-3b5a3068 {
+    background: #ff4d4f;
 }
-.risk-description.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 16rpx;
+.mideum.data-v-3b5a3068 {
+    background: #faad14;
 }
-.risk-suggestions.data-v-3b5a3068 {
-  background: #f8f9fa;
-  padding: 16rpx;
-  border-radius: 8rpx;
+.low.data-v-3b5a3068 {
+    background: #52c41a;
 }
-.suggestions-label.data-v-3b5a3068 {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #333;
+.risk-desc.data-v-3b5a3068,
+.risk-suggestion.data-v-3b5a3068,
+.indicator-row.data-v-3b5a3068,
+.advice-content.data-v-3b5a3068,
+.advice-effect.data-v-3b5a3068 {
+    margin-top: 10rpx;
+    color: #666;
+    line-height: 1.7;
 }
-.suggestions-text.data-v-3b5a3068 {
-  font-size: 24rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-left: 8rpx;
+.info-card.data-v-3b5a3068 {
+    background: #fafafa;
+    border-radius: 20rpx;
+    padding: 24rpx;
 }
-
-/* 风险评估样式 */
-.risk-section.data-v-3b5a3068 {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  border: 1rpx solid #eee;
-  margin: 20rpx 0;
+.info-row.data-v-3b5a3068 {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20rpx;
 }
-
-/* 营养分析和运动分析样式 */
-.nutrition-section.data-v-3b5a3068,
-.sport-section.data-v-3b5a3068 {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  border: 1rpx solid #eee;
-  margin: 20rpx 0;
+.section-subtitle.data-v-3b5a3068 {
+    margin-top: 30rpx;
+    margin-bottom: 20rpx;
+    font-size: 30rpx;
+    font-weight: bold;
 }
-.nutrition-score.data-v-3b5a3068,
-.sport-score.data-v-3b5a3068 {
-  margin-bottom: 32rpx;
+.recommend-item.data-v-3b5a3068 {
+    margin-bottom: 14rpx;
+    line-height: 1.8;
+    color: #555;
 }
-.score-label.data-v-3b5a3068 {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
-  display: block;
-  margin-bottom: 16rpx;
+.green.data-v-3b5a3068 {
+    color: #00c48c;
+    font-weight: bold;
 }
-.score-bar.data-v-3b5a3068 {
-  width: 100%;
-  height: 8rpx;
-  background: #f0f0f0;
-  border-radius: 4rpx;
-  overflow: hidden;
-  margin-bottom: 8rpx;
+.time.data-v-3b5a3068 {
+    text-align: center;
+    color: #999;
+    margin-top: 30rpx;
+    font-size: 24rpx;
 }
-.score-progress.data-v-3b5a3068 {
-  height: 100%;
-  background: #007bff;
-  border-radius: 4rpx;
-  transition: width 0.3s ease;
-}
-.score-value.data-v-3b5a3068 {
-  font-size: 24rpx;
-  color: #666;
-}
-.nutrition-assessments.data-v-3b5a3068,
-.sport-assessments.data-v-3b5a3068 {
-  margin-bottom: 40rpx;
-}
-.assessment-item.data-v-3b5a3068 {
-  margin-bottom: 30rpx;
-  padding: 20rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-}
-.assessment-label.data-v-3b5a3068 {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
-  display: block;
-  margin-bottom: 10rpx;
-}
-.assessment-value.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
-}
-.dietary-recommendations.data-v-3b5a3068,
-.exercise-recommendations.data-v-3b5a3068 {
-  background: #f8f9fa;
-  padding: 20rpx;
-  border-radius: 12rpx;
-  border: 1rpx solid #eee;
-}
-.recommendations-title.data-v-3b5a3068 {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #333;
-  display: block;
-  margin-bottom: 16rpx;
-}
-.recommendation-item.data-v-3b5a3068 {
-  margin-bottom: 12rpx;
-}
-.recommendation-text.data-v-3b5a3068 {
-  font-size: 24rpx;
-  color: #555;
-  line-height: 1.5;
-}
-
-/* 指标分析样式 */
-.indicators-section.data-v-3b5a3068 {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  border: 1rpx solid #eee;
-  margin: 20rpx 0;
-}
-.indicators-list.data-v-3b5a3068 {
-  space-y: 20rpx;
-}
-.indicator-item.data-v-3b5a3068 {
-  padding: 20rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-  border: 1rpx solid #eee;
-}
-.indicator-header.data-v-3b5a3068 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
-}
-.indicator-info.data-v-3b5a3068 {
-  display: flex;
-  align-items: center;
-  gap: 15rpx;
-}
-.indicator-emoji.data-v-3b5a3068 {
-  font-size: 28rpx;
-}
-.indicator-name.data-v-3b5a3068 {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
-}
-.indicator-details.data-v-3b5a3068 {
-  space-y: 15rpx;
-}
-.detail-row.data-v-3b5a3068 {
-  display: flex;
-  margin-bottom: 15rpx;
-}
-.detail-label.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #666;
-  width: 140rpx;
-  flex-shrink: 0;
-}
-.detail-value.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #333;
-  flex: 1;
-}
-.indicator-advice.data-v-3b5a3068 {
-  margin-top: 20rpx;
-  padding: 20rpx;
-  background: #fff;
-  border-radius: 12rpx;
-}
-.advice-label.data-v-3b5a3068 {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #4caf50;
-}
-.advice-text.data-v-3b5a3068 {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-left: 10rpx;
-}
-
-/* 健康建议样式 */
-.recommendations-section.data-v-3b5a3068 {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  border: 1rpx solid #eee;
-  margin: 20rpx 0;
-}
-.recommendations-list.data-v-3b5a3068 {
-  space-y: 20rpx;
-}
-.recommendation-card.data-v-3b5a3068 {
-  padding: 24rpx;
-  background: #f8f9fa;
-  color: #333;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-  border: 1rpx solid #eee;
-}
-.recommendation-header.data-v-3b5a3068 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-.recommendation-info.data-v-3b5a3068 {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-.recommendation-emoji.data-v-3b5a3068 {
-  font-size: 28rpx;
-}
-.recommendation-title.data-v-3b5a3068 {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
-}
-.recommendation-type.data-v-3b5a3068 {
-  margin-bottom: 16rpx;
-}
-.type-label.data-v-3b5a3068 {
-  font-size: 24rpx;
-  color: #666;
-}
-.type-value.data-v-3b5a3068 {
-  font-size: 24rpx;
-  font-weight: 600;
-  margin-left: 8rpx;
-  color: #333;
-}
-.recommendation-content.data-v-3b5a3068 {
-  font-size: 26rpx;
-  line-height: 1.5;
-  margin-bottom: 16rpx;
-  color: #555;
-}
-.recommendation-effect.data-v-3b5a3068 {
-  background: #fff;
-  padding: 16rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid #eee;
-}
-.effect-label.data-v-3b5a3068 {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #333;
-}
-.effect-text.data-v-3b5a3068 {
-  font-size: 24rpx;
-  line-height: 1.5;
-  margin-left: 8rpx;
-  color: #666;
-}
-
-/* 分析时间样式 */
-.analysis-time.data-v-3b5a3068 {
-  text-align: center;
-  margin-top: 32rpx;
-  padding: 20rpx;
-}
-.time-text.data-v-3b5a3068 {
-  font-size: 22rpx;
-  color: #999;
-}
-
-/* 错误状态样式 */
-.error-container.data-v-3b5a3068 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60vh;
-}
-.error-content.data-v-3b5a3068 {
-  text-align: center;
+.error-box.data-v-3b5a3068 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
 }
 .error-text.data-v-3b5a3068 {
-  font-size: 28rpx;
-  color: #666;
-  margin: 24rpx 0;
-  display: block;
+    font-size: 34rpx;
+    margin-bottom: 30rpx;
 }
-.retry-button.data-v-3b5a3068 {
-  margin-top: 24rpx;
-  background: #007bff;
+.error-message.data-v-3b5a3068 {
+    max-width: 620rpx;
+    margin-bottom: 24rpx;
+    color: #666;
+    font-size: 26rpx;
+    line-height: 1.6;
+    text-align: center;
 }
-
-/* 健康等级颜色样式 */
-.level-excellent.data-v-3b5a3068 {
-  color: #28a745;
+.retry-btn.data-v-3b5a3068 {
+    background: #00c48c;
+    color: #fff;
+    border-radius: 10rpx;
+    padding: 16rpx 40rpx;
 }
-.level-good.data-v-3b5a3068 {
-  color: #007bff;
-}
-.level-average.data-v-3b5a3068 {
-  color: #ffc107;
-}
-.level-poor.data-v-3b5a3068 {
-  color: #dc3545;
+.empty-tip.data-v-3b5a3068 {
+    text-align: center;
+    color: #999;
+    padding: 40rpx 0;
+    font-size: 28rpx;
 }

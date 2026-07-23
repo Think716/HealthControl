@@ -7394,9 +7394,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "10.64.8.162,127.0.0.1";
+  const hosts = "10.64.232.57,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_Jm5f7w";
+  const id = "mp-weixin_6GHIaP";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -9143,11 +9143,6 @@ const onUnload = /* @__PURE__ */ createLifeCycleHook(
   2
   /* HookFlags.PAGE */
 );
-const onPageScroll = /* @__PURE__ */ createLifeCycleHook(
-  ON_PAGE_SCROLL,
-  2
-  /* HookFlags.PAGE */
-);
 const pages = [
   {
     path: "pages/Front/Login"
@@ -9195,6 +9190,9 @@ const pages = [
     path: "pages/Front/DietRecordList"
   },
   {
+    path: "pages/Front/SportRecordList"
+  },
+  {
     path: "pages/Front/HealthArticleList"
   },
   {
@@ -9231,10 +9229,19 @@ const pages = [
     path: "pages/Front/AiAnalyse"
   },
   {
+    path: "pages/Front/FitnessVideoList"
+  },
+  {
     path: "pages/Front/HealthNoticeList"
   },
   {
     path: "pages/Front/HealthNoticeForm"
+  },
+  {
+    path: "pages/Front/CommunityList"
+  },
+  {
+    path: "pages/Front/CommunityForm"
   },
   {
     path: "pages/Front/WeChatBind"
@@ -12111,7 +12118,6 @@ exports.onHide = onHide;
 exports.onLaunch = onLaunch;
 exports.onLoad = onLoad;
 exports.onMounted = onMounted;
-exports.onPageScroll = onPageScroll;
 exports.onReady = onReady;
 exports.onShow = onShow;
 exports.onUnload = onUnload;

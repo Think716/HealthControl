@@ -83,7 +83,7 @@ public class Food extends BaseEntity {
     public FoodDto MapToDto() throws InvocationTargetException, IllegalAccessException {
         FoodDto FoodDto = new FoodDto();
         // 修正参数顺序：源对象（this）在前，目标对象在后
-        BeanUtils.copyProperties(this, FoodDto);
+        BeanUtils.copyProperties(FoodDto, this);
         return FoodDto;
     }
 

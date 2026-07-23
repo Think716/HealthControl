@@ -97,6 +97,11 @@ public class RecipeController {
         RecipeService.AddViewCount(input);
     }
 
+    @RequestMapping(value = "/SetRecommend", method = RequestMethod.POST)
+    public void SetRecommend(@RequestBody RecipeDto input) {
+        RecipeService.SetRecommend(input);
+    }
+
     /**
      * 推荐算法(基于行为+权重的协同过滤算法)
      */

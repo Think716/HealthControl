@@ -54,6 +54,18 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
     @Autowired
     private MessageNoticeMapper messageNoticeMapper;
 
+    @Autowired
+    private CommunityPostMapper communityPostMapper;
+
+    @Autowired
+    private CommunityCommentMapper communityCommentMapper;
+
+    @Autowired
+    private SportMapper sportMapper;
+
+    @Autowired
+    private SportRecordMapper sportRecordMapper;
+
     @SneakyThrows
     @Override
     public HashMap<String, Object> GetAllAnalysisData() {
@@ -73,6 +85,9 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
 
         // 5. 饮食热量面积图
         result.put("DietCaloriesAreaChart", GetDietCaloriesAreaChart());
+
+        // 6. 运动记录柱状图
+        result.put("SportRecordBarChart", GetSportRecordBarChart());
 
         // 7. 健康知识浏览量排行榜
         result.put("ArticleViewRankingChart", GetArticleViewRankingChart());
@@ -100,6 +115,7 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
 
         // 15. 健康提醒完成率散点图
         result.put("HealthNoticeScatterChart", GetHealthNoticeScatterChart());
+        result.put("CommunityStats", GetCommunityStats());
 
         return result;
     }
@@ -113,6 +129,30 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
         data.put("TotalHealthIndicators", healthIndicatorMapper.selectCount(null));
         data.put("TotalHealthRecords", healthIndicatorRecordMapper.selectCount(null));
         data.put("TotalDietRecords", dietRecordMapper.selectCount(null));
+        data.put("TotalCommunityPosts", communityPostMapper.selectCount(null));
+        data.put("TotalCommunityComments", communityCommentMapper.selectCount(null));
+        data.put("TotalSports", sportMapper.selectCount(null));
+        data.put("TotalSportRecords", sportRecordMapper.selectCount(null));
+        return data;
+    }
+
+    private HashMap<String, Object> GetCommunityStats() {
+        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("TotalPosts", communityPostMapper.selectCount(null));
+        data.put("TodayPosts", communityPostMapper.selectCount(Wrappers.<CommunityPost>lambdaQuery()
+                .ge(CommunityPost::getCreationTime, today)));
+        data.put("TotalComments", communityCommentMapper.selectCount(null));
+        data.put("TodayComments", communityCommentMapper.selectCount(Wrappers.<CommunityComment>lambdaQuery()
+                .ge(CommunityComment::getCreationTime, today)));
+        data.put("PostUserCount", communityPostMapper.selectList(null).stream()
+                .map(CommunityPost::getPublishUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()).size());
+        data.put("CommentUserCount", communityCommentMapper.selectList(null).stream()
+                .map(CommunityComment::getCommentUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()).size());
         return data;
     }
 
@@ -204,6 +244,7 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
             }
         }
         return result;
+
     }
 
     // 4. 饮食热量面积图
@@ -239,9 +280,7 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
         return result;
     }
 
-
-
-    // 6. 健康知识浏览量排行榜
+    // 7. 健康知识浏览量排行榜
     private List<HashMap<String, Object>> GetArticleViewRankingChart() {
         List<HealthArticle> articles = healthArticleMapper.selectList(
                 Wrappers.<HealthArticle>lambdaQuery()
@@ -482,7 +521,26 @@ public class DataAnalysisServiceImpl implements DataAnalysisService {
             item.put("Size", 10 + random.nextInt(20)); // 点的大小
             result.add(item);
         }
+        return result;
+        }
+    // 运动记录柱状图
+    private List<HashMap<String, Object>> GetSportRecordBarChart() {
+        List<SportRecord> sportRecords = sportRecordMapper.selectList(null);
+        Map<String, Long> sportCount = sportRecords.stream()
+                .collect(Collectors.groupingBy(
+                        record -> {
+                            Sport sport = sportMapper.selectById(record.getSportId());
+                            return sport != null ? sport.getName() : "未知运动";
+                        },
+                        Collectors.counting()));
 
+        List<HashMap<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : sportCount.entrySet()) {
+            HashMap<String, Object> item = new HashMap<>();
+            item.put("Label", entry.getKey());
+            item.put("Value", entry.getValue());
+            result.add(item);
+        }
         return result;
     }
 }

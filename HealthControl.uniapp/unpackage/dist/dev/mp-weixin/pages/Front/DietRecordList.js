@@ -105,6 +105,28 @@ const _sfc_main = {
       const minutes = String(date.getMinutes()).padStart(2, "0");
       return `${hours}:${minutes}`;
     };
+    const shareDietRecord = async () => {
+      common_vendor.index.showModal({
+        title: "分享饮食",
+        content: "确认将今日饮食记录分享到社区吗？",
+        success: async (res) => {
+          if (res.confirm) {
+            const year = selectedDate.value.getFullYear();
+            const month = String(selectedDate.value.getMonth() + 1).padStart(2, "0");
+            const day = String(selectedDate.value.getDate()).padStart(2, "0");
+            const dateStr = `${year}-${month}-${day}`;
+            const { Success, Msg } = await utils_http.Post("/CommunityPost/ShareDietRecord", {
+              UserId: UserId.value,
+              Date: dateStr
+            });
+            common_vendor.index.showToast({
+              title: Success ? "已分享到社区" : Msg || "分享失败",
+              icon: Success ? "success" : "none"
+            });
+          }
+        }
+      });
+    };
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.o(goBack),
@@ -128,7 +150,11 @@ const _sfc_main = {
         e: common_vendor.t(selectedDateText.value),
         f: DietRecordList.value.length > 0
       }, DietRecordList.value.length > 0 ? {
-        g: common_vendor.f(DietRecordList.value, (mealGroup, index, i0) => {
+        g: common_vendor.o(shareDietRecord)
+      } : {}, {
+        h: DietRecordList.value.length > 0
+      }, DietRecordList.value.length > 0 ? {
+        i: common_vendor.f(DietRecordList.value, (mealGroup, index, i0) => {
           return {
             a: common_vendor.t(mealGroup.DateType),
             b: common_vendor.t(mealGroup.TotalCalories),
@@ -151,24 +177,24 @@ const _sfc_main = {
             g: index
           };
         }),
-        h: common_vendor.p({
+        j: common_vendor.p({
           type: "trash",
           size: "20",
           color: "#ff4757"
         })
       } : {
-        i: common_vendor.p({
+        k: common_vendor.p({
           type: "calendar",
           size: "60",
           color: "#ccc"
         })
       }, {
-        j: common_vendor.p({
+        l: common_vendor.p({
           type: "plus",
           size: "24",
           color: "#fff"
         }),
-        k: common_vendor.o(goToAddRecord)
+        m: common_vendor.o(goToAddRecord)
       });
     };
   }

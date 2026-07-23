@@ -1,8 +1,8 @@
 <template>
     <div class="upload-files-wrap">
-        <!-- 图片上传组件 -->
-        <el-upload :action="uploadUrl" list-type="picture-card" :show-file-list="true" :on-success="handleUploadSuccess"
-            :on-remove="handleRemove" :file-list="fileList" accept=".jpg,.png,.jpeg,.jfif,.webp" :limit="limit" :multiple="true">
+        <el-upload :action="uploadUrl" :data="uploadData" list-type="picture-card" :show-file-list="true"
+            :on-success="handleUploadSuccess" :on-remove="handleRemove" :file-list="fileList"
+            accept=".jpg,.png,.jpeg,.jfif,.webp,.svg" :limit="limit" :multiple="limit > 1">
             <el-icon>
                 <Plus />
             </el-icon>
@@ -13,9 +13,8 @@
 <script setup>
 import { GetFileNameByPath } from "@/utils/comm.js";
 import { Plus } from '@element-plus/icons-vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
-// 定义props
 const props = defineProps({
     modelValue: {
         type: [Number, String],
@@ -25,70 +24,70 @@ const props = defineProps({
         type: Number,
         default: 1,
     },
+    category: {
+        type: String,
+        default: 'uploads'
+    },
 })
 
-// 定义emit
 const emit = defineEmits(['update:modelValue'])
 
-// 响应式数据
 const uploadUrl = import.meta.env.VITE_API_BASE_URL + "/File/BatchUpload"
+const uploadData = computed(() => ({ category: props.category || 'uploads' }))
 const fileList = ref([])
 
-// 监听modelValue变化
 watch(() => props.modelValue, (newVal) => {
-    if (newVal) {
-        fileList.value = newVal.split(",").map(x => {
-            return {
-                url: x,
-                name: GetFileNameByPath(x),
-                status: "success"
-            }
-        })
+    if (!newVal) {
+        fileList.value = []
+        return
     }
+
+    fileList.value = String(newVal).split(",").filter(Boolean).map(x => ({
+        url: x,
+        name: GetFileNameByPath(x),
+        status: "success"
+    }))
 }, { immediate: true })
 
-// 文件列表转换方法
 const FileListConvert = (files) => {
-    let list = []
+    const list = []
     if (Array.isArray(files)) {
-        files.filter(x => x.status == "success").forEach((item) => {
+        files.filter(x => x.status === "success").forEach((item) => {
             if (item.response != null) {
-                list = [...list, { name: "", url: item.response.Data[0].Url }]
+                list.push({ name: item.name || "", url: item.response.Data[0].Url, status: "success" })
             } else {
-                list = [...list, item]
+                list.push(item)
             }
         })
     }
     return list
 }
 
-// 文件上传成功处理
-const handleUploadSuccess = (response, file, fileList) => {
-    let fs = FileListConvert(fileList)
-    let url = fs.length > 0 ? fs.map(x => x.url).join(",") : ""
+const updateValue = (files) => {
+    const fs = FileListConvert(files)
+    const url = fs.length > 0 ? fs.map(x => x.url).join(",") : ""
+    fileList.value = fs
     emit('update:modelValue', url)
 }
 
-// 文件移除处理
-const handleRemove = (file, fileList) => {
-    let fs = FileListConvert(fileList)
-    let url = fs.length > 0 ? fs.map(x => x.url).join(",") : ""
-    emit('update:modelValue', url)
+const handleUploadSuccess = (response, file, files) => {
+    updateValue(files)
+}
+
+const handleRemove = (file, files) => {
+    updateValue(files)
 }
 </script>
 
 <style scoped>
-/* 上传组件容器样式 */
 .upload-files-wrap {
     width: 100%;
 }
 
-/* 上传按钮样式 */
 :deep(.el-upload--picture-card) {
     background-color: transparent !important;
 }
 
-/* 上传图标样式 */
 :deep(.el-upload--picture-card .el-icon) {
     font-size: 28px;
     color: #8c939d;

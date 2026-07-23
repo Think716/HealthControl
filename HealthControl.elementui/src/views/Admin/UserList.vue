@@ -88,7 +88,7 @@
                     </el-col>
                     <el-col :span="24">
                         <el-form-item label="图片">
-                            <UploadImages :limit="1" v-model="formData.ImageUrls"></UploadImages>
+                            <UploadImages :limit="1" category="user-avatars" v-model="formData.ImageUrls"></UploadImages>
                         </el-form-item>
                     </el-col>
                 </el-row>

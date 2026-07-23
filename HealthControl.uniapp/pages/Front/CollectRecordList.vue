@@ -128,12 +128,8 @@ const switchTab = (tab) => {
 
 // 获取收藏记录列表
 const GetCollectRecordListApi = async () => {
-    let {
-        Data: {
-            Items
-        }
-    } = await Post('/CollectRecord/List', where);
-    CollectRecordList.value = Items;
+    const { Data } = await Post('/CollectRecord/List', where);
+    CollectRecordList.value = Data?.Items || [];
 }
 
 // 删除收藏记录

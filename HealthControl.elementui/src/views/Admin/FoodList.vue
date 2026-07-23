@@ -52,7 +52,7 @@
 
                     <el-col :span="24">
                         <el-form-item label="封面" prop="Cover">
-                           <UploadImages :limit="1" v-model="formData.Cover"></UploadImages>
+                           <UploadImages :limit="1" category="food-covers" v-model="formData.Cover"></UploadImages>
                         </el-form-item>
                     </el-col>
 

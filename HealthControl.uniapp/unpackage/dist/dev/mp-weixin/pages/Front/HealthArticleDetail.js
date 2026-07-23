@@ -179,7 +179,7 @@ const _sfc_main = {
         c: common_vendor.t(HealthArticle.value.Title),
         d: HealthArticle.value.PublishUserDto
       }, HealthArticle.value.PublishUserDto ? {
-        e: HealthArticle.value.PublishUserDto.ImageUrls || common_vendor.unref(common_assets.userInfoIcon),
+        e: HealthArticle.value.PublishUserDto.ImageUrls || common_vendor.unref(common_assets.defaultAvatar),
         f: common_vendor.t(HealthArticle.value.PublishUserDto.Name || HealthArticle.value.PublishUserDto.UserName)
       } : {}, {
         g: common_vendor.t(HealthArticle.value.HealthArticleTypeDto && HealthArticle.value.HealthArticleTypeDto.Name),

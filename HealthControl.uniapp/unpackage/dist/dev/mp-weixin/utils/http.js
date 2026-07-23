@@ -93,6 +93,25 @@ var Upload = function(filePath) {
     });
   });
 };
+var UploadImageByCamera = function(count = 1) {
+  return new Promise((resolve, reject) => {
+    common_vendor.index.chooseImage({
+      count,
+      sizeType: ["original", "compressed"],
+      sourceType: ["album", "camera"],
+      success: async (res) => {
+        let { tempFilePaths } = res;
+        let fileList = [];
+        for (let i = 0; i < tempFilePaths.length; i++) {
+          let response = await Upload(tempFilePaths[i]);
+          fileList.push(response.Data[0]);
+        }
+        resolve(fileList);
+      }
+    });
+  });
+};
 exports.Post = Post;
 exports.Upload = Upload;
+exports.UploadImageByCamera = UploadImageByCamera;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/utils/http.js.map

@@ -128,12 +128,8 @@ const switchTab = (tab) => {
 
 // 获取点赞记录列表
 const GetLikeRecordListApi = async () => {
-    let {
-        Data: {
-            Items
-        }
-    } = await Post('/LikeRecord/List', where);
-    LikeRecordList.value = Items;
+    const { Data } = await Post('/LikeRecord/List', where);
+    LikeRecordList.value = Data?.Items || [];
 }
 
 // 删除点赞记录

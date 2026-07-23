@@ -8,9 +8,8 @@
 import { PostUpload } from "@/api/http";
 import { AiEditor } from "aieditor";
 import "aieditor/dist/style.css";
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue';
 
-// 定义props
 const props = defineProps({
     modelValue: {
         type: String,
@@ -19,18 +18,18 @@ const props = defineProps({
     height: {
         type: String,
         default: '300px'
+    },
+    category: {
+        type: String,
+        default: 'richtext-assets'
     }
 })
 
-// 定义emit
 const emit = defineEmits(['update:modelValue'])
 
-// 定义响应式数据
-const uploadUrl = import.meta.env.VITE_APP_BASE_API + "/File/BatchUpload"
-const fileList = ref([])
+const uploadUrl = import.meta.env.VITE_API_BASE_URL + "/File/BatchUpload"
 let editor = null
 
-// 初始化编辑器
 const initEditor = () => {
     editor = new AiEditor({
         element: "#aiEditor",
@@ -44,22 +43,23 @@ const initEditor = () => {
         pasteAsText: false,
         image: {
             uploadUrl: uploadUrl,
-            uploader: async (file, uploadUrl, headers, formName) => {
+            uploader: async (file, uploadUrl) => {
                 const formData = new FormData()
                 formData.append('file', file)
+                formData.append('category', props.category)
 
-                let { Success, Data } = await PostUpload(uploadUrl, formData)
+                const { Data } = await PostUpload(uploadUrl, formData)
 
                 return {
-                    "errorCode": 0,
-                    "data": {
-                        "src": Data[0].Url,
-                        "alt": Data[0].FileName,
-                        "align": "center",
-                        "width": "100%",
-                        "height": "auto",
-                        "class": "image-class",
-                        "loading": true,
+                    errorCode: 0,
+                    data: {
+                        src: Data[0].Url,
+                        alt: Data[0].FileName,
+                        align: "center",
+                        width: "100%",
+                        height: "auto",
+                        class: "image-class",
+                        loading: true,
                         "data-src": Data[0].Url
                     }
                 }
@@ -81,14 +81,19 @@ const initEditor = () => {
     })
 }
 
-// 组件挂载后初始化编辑器
 onMounted(() => {
     nextTick(() => {
         initEditor()
     })
 })
 
-// 监听modelValue变化
+onBeforeUnmount(() => {
+    if (editor) {
+        editor.destroy()
+        editor = null
+    }
+})
+
 watch(() => props.modelValue, (newValue) => {
     if (editor && newValue !== editor.getHtml()) {
         editor.setHtml(newValue)
@@ -97,7 +102,6 @@ watch(() => props.modelValue, (newValue) => {
 </script>
 
 <style scoped>
-/* 编辑器容器样式 */
 #aiEditor {
     border: 1px solid #dcdfe6;
     border-radius: 4px;

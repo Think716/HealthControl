@@ -66,13 +66,13 @@
 
                     <el-col :span="24">
                         <el-form-item label="封面" prop="Cover">
-                            <UploadImages :limit="1" v-model="formData.Cover"></UploadImages>
+                            <UploadImages :limit="1" category="recipe-covers" v-model="formData.Cover"></UploadImages>
                         </el-form-item>
                     </el-col>
 
                     <el-col :span="24">
                         <el-form-item label="详细图" prop="ImageUrls">
-                            <UploadImages :limit="6" v-model="formData.ImageUrls"></UploadImages>
+                            <UploadImages :limit="6" category="recipe-images" v-model="formData.ImageUrls"></UploadImages>
                         </el-form-item>
                     </el-col>
 
@@ -80,7 +80,7 @@
 
                     <el-col :span="24">
                         <el-form-item label="视频路径" prop="VideoUrl">
-                            <UploadVideo v-model="formData.VideoUrl"></UploadVideo>
+                            <UploadVideo category="recipe-videos" v-model="formData.VideoUrl"></UploadVideo>
                         </el-form-item>
                     </el-col>
 
@@ -88,7 +88,7 @@
 
                     <el-col :span="24">
                         <el-form-item label="内容" prop="Content">
-                            <AIRichText v-model="formData.Content"></AIRichText>
+                            <AIRichText category="recipe-content" v-model="formData.Content"></AIRichText>
                         </el-form-item>
                     </el-col>
                 </el-row>

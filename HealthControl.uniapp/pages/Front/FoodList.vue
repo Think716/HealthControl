@@ -6,11 +6,23 @@
 
         <!-- 主要内容区域 -->
         <view class="voice-entry-panel">
-            <view class="voice-entry-title">🎤 微信语音快速记饮食</view>
+            <view class="voice-entry-title">语音/文字记饮食</view>
+            <input
+                v-model="quickRecordText"
+                class="quick-record-input"
+                placeholder="例如：早餐吃了一个鸡蛋、一杯牛奶"
+                placeholder-style="color:#9ca3af;font-size:24rpx;"
+                confirm-type="done"
+                @confirm="submitQuickRecord"
+            />
             <view class="voice-entry-actions">
-                <view class="voice-btn" :class="{ recording: isRecording }" @click="toggleVoiceRecording">
-                    <uni-icons :type="isRecording ? 'mic-filled' : 'mic'" size="20" color="#fff"></uni-icons>
-                    <text class="voice-btn-text">{{ isRecording ? '结束录音' : '语音录入' }}</text>
+                <view class="voice-btn" :class="{ recording: isRecording, listening: isRecording || !!voiceText }" @click="toggleVoice">
+                    <uni-icons :type="isRecording ? 'sound-filled' : 'mic'" size="20" color="#fff"></uni-icons>
+                    <text class="voice-btn-text">{{ isRecording ? '停止录音' : '语音输入' }}</text>
+                </view>
+                <view class="voice-btn" @click="submitQuickRecord">
+                    <uni-icons type="compose" size="20" color="#fff"></uni-icons>
+                    <text class="voice-btn-text">解析记录</text>
                 </view>
                 <view class="voice-btn secondary" @click="clearVoiceResult">
                     <uni-icons type="clear" size="18" color="#4CAF50"></uni-icons>
@@ -18,13 +30,19 @@
                 </view>
             </view>
             <view class="voice-result" v-if="voiceText">
-                <text class="voice-result-label">识别结果：</text>
+                <text class="voice-result-label">输入内容：</text>
                 <text class="voice-result-text">{{ voiceText }}</text>
             </view>
             <view class="voice-match-result" v-if="voiceMatchedPreview.length > 0">
                 <text class="voice-result-label">将自动记录：</text>
                 <text class="voice-match-item" v-for="(item, index) in voiceMatchedPreview" :key="index">
                     {{ item.foodName }} × {{ item.amount }}{{ item.unitName }}
+                </text>
+            </view>
+            <view class="voice-unmatch-result" v-if="voiceUnmatchedTexts.length > 0">
+                <text class="voice-result-label warning">未匹配到：</text>
+                <text class="voice-unmatch-item" v-for="(text, index) in voiceUnmatchedTexts" :key="index">
+                    {{ text }}
                 </text>
             </view>
         </view>
@@ -42,51 +60,48 @@
 
             <!-- 右侧食物列表 -->
             <view class="food-content">
-                <view v-if="FoodTypeList.length > 0">
-                    <scroll-view class="food-scroll" scroll-y @scroll="onFoodScroll" :scroll-top="scrollTop"
-                        :scroll-with-animation="true">
-                        <view v-for="category in FoodTypeList" :key="category.Id" :id="`category-${category.Id}`"
-                            class="food-category-section">
-                            <!-- 分类标题 -->
-                            <view class="category-title">
-                                <text class="title-text">{{ category.Name }}</text>
-                            </view>
+                <scroll-view v-if="FoodTypeList.length > 0" class="food-scroll" scroll-y @scroll="onFoodScroll" :scroll-into-view="scrollIntoView" :scroll-with-animation="true">
+                    <view v-for="category in FoodTypeList" :key="category.Id" :id="`category-${category.Id}`"
+                        class="food-category-section">
+                        <!-- 分类标题 -->
+                        <view class="category-title">
+                            <text class="title-text">{{ category.Name }}</text>
+                        </view>
 
-                            <!-- 该分类下的食物列表 -->
-                            <view class="food-list">
-                                <view v-for="food in category.Foods" :key="food.Id" class="food-item" @click="selectFood(food)">
-                                    <!-- 食物图片 -->
-                                    <view class="food-image">
-                                        <image :src="food.Cover" mode="aspectFill" class="food-cover" />
+                        <!-- 该分类下的食物列表 -->
+                        <view class="food-list">
+                            <view v-for="food in category.Foods" :key="food.Id" class="food-item" @click="selectFood(food)">
+                                <!-- 食物图片 -->
+                                <view class="food-image">
+                                    <image :src="food.Cover" mode="aspectFill" class="food-cover" />
+                                </view>
+
+                                <!-- 食物信息 -->
+                                <view class="food-info">
+                                    <view class="food-name">{{ food.Name }}</view>
+                                    <view class="food-nutrition">
+                                        <text class="nutrition-item">热量: {{ food.Calories }}kcal/1g</text>
+                                        <text class="nutrition-item">蛋白质: {{ food.Protein }}g</text>
+                                        <text class="nutrition-item">碳水: {{ food.Carbohydrates }}g</text>
+                                        <text class="nutrition-item">脂肪: {{ food.Fat }}g</text>
                                     </view>
 
-                                    <!-- 食物信息 -->
-                                    <view class="food-info">
-                                        <view class="food-name">{{ food.Name }}</view>
-                                        <view class="food-nutrition">
-                                            <text class="nutrition-item">热量: {{ food.Calories }}kcal/1g</text>
-                                            <text class="nutrition-item">蛋白质: {{ food.Protein }}g</text>
-                                            <text class="nutrition-item">碳水: {{ food.Carbohydrates }}g</text>
-                                            <text class="nutrition-item">脂肪: {{ food.Fat }}g</text>
-                                        </view>
-
-                                        <!-- 食物单位选择 -->
-                                        <view class="food-units" v-if="food.FoodUnits && food.FoodUnits.length > 0">
-                                            <text class="units-label">常见单位：</text>
-                                            <view class="units-list">
-                                                <view v-for="unit in food.FoodUnits" :key="unit.Id" class="unit-item"
-                                                    @click.stop="selectUnit(food, unit)">
-                                                    <text class="unit-name">{{ unit.UnitName }}</text>
-                                                    <text class="unit-calories">({{ unit.Calories }}kcal)</text>
-                                                </view>
+                                    <!-- 食物单位选择 -->
+                                    <view class="food-units" v-if="food.FoodUnits && food.FoodUnits.length > 0">
+                                        <text class="units-label">常见单位：</text>
+                                        <view class="units-list">
+                                            <view v-for="unit in food.FoodUnits" :key="unit.Id" class="unit-item"
+                                                @click.stop="selectUnit(food, unit)">
+                                                <text class="unit-name">{{ unit.UnitName }}</text>
+                                                <text class="unit-calories">({{ unit.Calories }}kcal)</text>
                                             </view>
                                         </view>
                                     </view>
                                 </view>
                             </view>
                         </view>
-                    </scroll-view>
-                </view>
+                    </view>
+                </scroll-view>
                 <view class="food-empty-state" v-else>
                     <uni-icons type="info" size="28" color="#7cb67c"></uni-icons>
                     <text class="food-empty-text">{{ foodLoadError || '暂无食物数据，请稍后重试' }}</text>
@@ -95,10 +110,10 @@
         </view>
 
         <!-- 分量输入弹窗 -->
-        <uni-popup ref="portionPopup" type="center" background-color="rgba(0,0,0,0.5)">
+        <uni-popup ref="portionPopup" type="center" >
             <view class="portion-input-popup" v-if="selectedUnit">
                 <view class="portion-header">
-                    <text class="portion-title">🍽️ 添加食物记录</text>
+                    <text class="portion-title">添加食物记录</text>
                     <view class="portion-close" @click="closePortionPopup">
                         <uni-icons type="closeempty" size="24" color="#666"></uni-icons>
                     </view>
@@ -120,10 +135,11 @@
                          <input
 						 v-model="portionAmount"
                         type="digit"
-                             placeholder="例如：1、2.5"
+                            placeholder="例如：1、2.5"
                             placeholder-style="color:#9ca3af;font-size:24rpx;"
                             :style="inputStyles"
                             class="portion-input"
+                            @input="onPortionInput"
                         />
                     </view>
 
@@ -163,7 +179,7 @@
 <script setup>
 import { useCommonStore } from '@/store';
 import { Post } from '@/utils/http';
-import { onLoad, onReady, onShow } from "@dcloudio/uni-app";
+import { onReady, onShow } from "@dcloudio/uni-app";
 import { computed, reactive, ref, nextTick, watch } from 'vue';
 import { GetFormatFullDate } from '@/utils/comm';
 
@@ -177,7 +193,7 @@ const UserId = computed(() => commonStore.UserId)
 // 响应式数据
 const FoodTypeList = ref([]);
 const activeCategory = ref(0); // 当前激活的分类索引
-const scrollTop = ref(0); // 右侧滚动位置
+const scrollIntoView = ref('');// 右侧滚动位置
 const selectedFood = ref(null); // 选中的食物
 const foodPopup = ref(null); // 弹窗引用
 
@@ -199,19 +215,17 @@ const parsePickerDateTime = (value) => {
     return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
 };
 const calculatedNutrition = ref(null); // 计算后的营养信息
-const isRecording = ref(false);
+const quickRecordText = ref('');
 const voiceText = ref('');
 const voiceMatchedPreview = ref([]);
+const voiceUnmatchedTexts = ref([]);
 const foodLoadError = ref('');
-let plugin = null;
-let manager = null;
 
-// 输入框样式
+// 输入框样式（uni-app原生input需内联样式控制文字颜色）
 const inputStyles = {
-    borderRadius: '12rpx',
-        color: '#111827',
-        fontSize: '30rpx',
-        fontWeight: '600'
+    color: '#111827',
+    fontSize: '32rpx',
+    fontWeight: '700'
 };
 
 const where = reactive({});
@@ -219,11 +233,6 @@ const where = reactive({});
 // 计算属性
 const canSave = computed(() => {
     return portionAmount.value && parseFloat(portionAmount.value) > 0 && selectedUnit.value;
-});
-
-// 生命周期钩子
-onLoad(async (option) => {
-    initVoicePlugin();
 });
 
 onShow(async () => {
@@ -258,19 +267,9 @@ const GetFoodTypeListApi = async () => {
 // 选择分类
 const selectCategory = async (index, categoryId) => {
     activeCategory.value = index;
-
-    // 滚动到对应的分类区域
+    scrollIntoView.value = '';
     await nextTick();
-
-    // 获取目标元素位置并滚动
-    const query = uni.createSelectorQuery();
-    query.select(`#category-${categoryId}`).boundingClientRect();
-    query.selectViewport().scrollOffset();
-    query.exec((res) => {
-        if (res[0]) {
-            scrollTop.value = res[0].top - 100; // 减去一些偏移量
-        }
-    });
+    scrollIntoView.value = `category-${categoryId}`;
 };
 
 // 监听右侧滚动，同步左侧菜单
@@ -327,6 +326,19 @@ const closePortionPopup = () => {
 	recordTime.value = formatRecordTimeForPicker();
 };
 
+// 分量输入过滤（只允许数字和小数点）
+const onPortionInput = (e) => {
+    let val = e.detail.value;
+    // 移除非数字和小数点的字符
+    val = val.replace(/[^\d.]/g, '');
+    // 只保留第一个小数点
+    const dotIndex = val.indexOf('.');
+    if (dotIndex !== -1) {
+        val = val.substring(0, dotIndex + 1) + val.substring(dotIndex + 1).replace(/\./g, '');
+    }
+    portionAmount.value = val;
+};
+
 // 时间选择变化
 const onTimeChange = (e) => {
     recordTime.value = e.detail.value;
@@ -378,10 +390,11 @@ const saveDietRecord = async () => {
                   const parsedAmount = parseFloat(portionAmount.value);
                   const result = await Post('/DietRecord/CreateOrEdit', {
                       RecordUserId: UserId.value,
-            FoodUnitId: selectedUnit.value.unit.Id,
-                        RecordValue: Math.max(1, Math.round(parsedAmount)),
-                        RecordTime: GetFormatFullDate(parsePickerDateTime(recordTime.value))
-        });
+                      FoodId: selectedUnit.value.food.Id,          // ← 加上 FoodId
+                      FoodUnitId: selectedUnit.value.unit.Id,
+                      RecordValue: Math.max(1, Math.round(parsedAmount)),
+                      RecordTime: GetFormatFullDate(parsePickerDateTime(recordTime.value))
+                  });
 
         if (result.Success) {
             uni.showToast({
@@ -409,75 +422,21 @@ const saveDietRecord = async () => {
 		    }
 };
 
-const initVoicePlugin = () => {
-    // #ifdef MP-WEIXIN
-    try {
-        plugin = requirePlugin('WechatSI');
-        manager = plugin.getRecordRecognitionManager();
-
-        manager.onStart = () => {
-            isRecording.value = true;
-        };
-
-        manager.onStop = async (res) => {
-            isRecording.value = false;
-            if (!res?.result) {
-                uni.showToast({ title: '未识别到有效语音', icon: 'none' });
-                return;
-            }
-            voiceText.value = res.result;
-            await handleVoiceRecognitionResult(res.result);
-        };
-
-        manager.onError = (error) => {
-            isRecording.value = false;
-            console.error('语音识别失败:', error);
-            uni.showToast({
-                title: '语音识别失败，请重试',
-                icon: 'none'
-            });
-        };
-    } catch (error) {
-        console.error('初始化微信语音插件失败:', error);
-    }
-    // #endif
-};
-
-const toggleVoiceRecording = () => {
-    // #ifndef MP-WEIXIN
-    uni.showToast({ title: '该功能仅支持微信小程序', icon: 'none' });
-    return;
-    // #endif
-
-    // #ifdef MP-WEIXIN
-    if (!manager) {
-        uni.showToast({ title: '语音能力未初始化，请检查插件配置', icon: 'none' });
-        return;
-    }
-
-    if (isRecording.value) {
-        manager.stop();
-        return;
-    }
-
-    manager.start({
-        lang: 'zh_CN',
-        duration: 30000
-    });
-    // #endif
-};
-
 const clearVoiceResult = () => {
+    quickRecordText.value = '';
     voiceText.value = '';
     voiceMatchedPreview.value = [];
+    voiceUnmatchedTexts.value = [];
 };
 
-const handleVoiceRecognitionResult = async (text) => {
-    if (!text || !text.trim()) {
-        uni.showToast({ title: '未识别到有效语音', icon: 'none' });
+const submitQuickRecord = async () => {
+    const text = quickRecordText.value.trim();
+    if (!text) {
+        uni.showToast({ title: '请输入饮食描述', icon: 'none' });
         return;
     }
 
+    voiceText.value = text;
     uni.showLoading({ title: '正在保存记录...' });
     try {
         const result = await Post('/api/voice/recognize-text', {
@@ -487,24 +446,191 @@ const handleVoiceRecognitionResult = async (text) => {
         });
 
         const data = result?.Data || result;
-        const matchedItems = data?.matchedItems || [];
-        const savedCount = data?.savedCount || 0;
+        const matchedItems = data?.MatchedItems || data?.matchedItems || [];
+        const meaninglessWords = [
+            '早餐', '午餐', '晚餐', '夜宵', '宵夜', '加餐',
+            '吃了', '喝了', '还有', '和', '以及',
+            '一个', '一杯', '一些', '一点', '今天', '刚刚',
+            '记录', '一下', '我'    // ← 补充缺失项
+        ];
+        
+        const unmatchedTexts = (data?.UnmatchedTexts || data?.unmatchedTexts || []).filter(item => {
+            return !meaninglessWords.includes(item);
+        });
+        const savedCount = data?.SavedCount || data?.savedCount || 0;
 
         voiceMatchedPreview.value = matchedItems.map(item => ({
-            foodName: item.foodName,
-            amount: item.count,
-            unitName: item.unitName
+            foodName: item.FoodName || item.foodName,
+            amount: item.Count || item.count,
+            unitName: item.UnitName || item.unitName
         }));
+        voiceUnmatchedTexts.value = unmatchedTexts;
 
         if (savedCount > 0) {
-            uni.showToast({ title: `已记录${savedCount}条`, icon: 'success' });
+            if (unmatchedTexts.length > 0) {
+                uni.showToast({
+                    title: `已记录${savedCount}条，${unmatchedTexts.length}条未识别`,
+                    icon: 'success',
+                    duration: 3000
+                });
+            } else {
+                uni.showToast({ title: `已记录${savedCount}条`, icon: 'success' });
+            }
             return;
         }
+        
+                uni.showToast({ title: '未匹配到食物，请更换描述', icon: 'none' });
+            } catch (error) {
+                console.error('快速记录保存失败:', error);
+                uni.showToast({ title: '保存失败，请稍后重试', icon: 'none' });
+            } finally {
+                uni.hideLoading();
+            }
+        };
 
-        uni.showToast({ title: '未匹配到食物，请更换描述', icon: 'none' });
+// 录音管理器
+const recorderManager = uni.getRecorderManager();
+const isRecording = ref(false);
+const audioFilePath = ref('');
+
+// 初始化录音监听器
+recorderManager.onStart(() => {
+    isRecording.value = true;
+    console.log('[Voice] 录音已开始');
+    uni.showLoading({ title: '正在聆听...' });
+});
+
+recorderManager.onStop((res) => {
+    isRecording.value = false;
+    uni.hideLoading();
+    audioFilePath.value = res.tempFilePath;
+
+    console.log('[Voice] 录音结束, 文件路径:', res.tempFilePath);
+    console.log('[Voice] 录音时长:', res.duration, 'ms');
+
+    // 自动上传并识别
+    uploadAndRecognizeAudio(res.tempFilePath);
+});
+
+recorderManager.onError((err) => {
+    console.error('[Voice] 录音错误:', JSON.stringify(err));
+    isRecording.value = false;
+    uni.hideLoading();
+
+    let errorMsg = '录音失败';
+    if (err.errMsg && err.errMsg.includes('permission')) {
+        errorMsg = '请允许麦克风权限后再试';
+    } else if (err.errMsg && err.errMsg.includes('system')) {
+        errorMsg = '系统录音功能异常，请重试';
+    }
+
+    uni.showToast({
+        title: errorMsg,
+        icon: 'none',
+        duration: 2000
+    });
+});
+
+// 语音按钮统一入口
+const toggleVoice = () => {
+    if (isRecording.value) {
+        stopVoiceRecognition();
+    } else {
+        startVoiceRecognition();
+    }
+};
+
+// 开始录音
+const startVoiceRecognition = () => {
+    console.log('[Voice] 点击语音输入按钮');
+
+    // 运行时检测：H5 环境不调用录音（编译指令 #ifdef H5 保留）
+    // #ifdef H5
+    uni.showToast({ title: 'H5暂不支持语音输入', icon: 'none', duration: 2000 });
+    return;
+    // #endif
+
+    try {
+        recorderManager.start({
+            duration: 10000,
+            sampleRate: 16000,
+            numberOfChannels: 1,
+            encodeBitRate: 48000,
+            format: 'wav'
+        });
+        console.log('[Voice] start() 调用成功');
+    } catch (e) {
+        console.error('[Voice] start() 异常:', e);
+        uni.showToast({ title: '录音启动失败', icon: 'none' });
+    }
+};
+
+// 停止录音
+const stopVoiceRecognition = () => {
+    console.log('[Voice] 停止录音');
+    recorderManager.stop();
+};
+
+// 上传音频并识别
+const uploadAndRecognizeAudio = async (filePath) => {
+    uni.showLoading({ title: '识别中...' });
+
+    try {
+        const uploadRes = await new Promise((resolve, reject) => {
+            uni.uploadFile({
+                url: `${import.meta.env.VITE_API_BASE_URL}/api/voice/recognize`,
+                filePath: filePath,
+                name: 'file',
+                formData: {
+                    userId: UserId.value
+                },
+                success: resolve,
+                fail: reject
+            });
+        });
+
+        const result = JSON.parse(uploadRes.data);
+
+        if (result.Success && result.Data) {
+            const data = result.Data;
+            const matchedItems = data.matchedItems || [];
+            const unmatchedTexts = data.unmatchedTexts || [];
+            const savedCount = data.savedCount || 0;
+
+            voiceMatchedPreview.value = matchedItems.map(item => ({
+                foodName: item.foodName,
+                amount: item.count,
+                unitName: item.unitName
+            }));
+            voiceUnmatchedTexts.value = unmatchedTexts.filter(text => {
+                const meaninglessWords = ['早餐', '午餐', '晚餐', '吃了', '喝了'];
+                return !meaninglessWords.some(word => text.includes(word));
+            });
+
+            if (savedCount > 0) {
+                uni.showToast({
+                    title: `已记录${savedCount}条`,
+                    icon: 'success'
+                });
+            } else {
+                uni.showToast({
+                    title: '未匹配到食物',
+                    icon: 'none'
+                });
+            }
+        } else {
+            uni.showToast({
+                title: result.Msg || '识别失败',
+                icon: 'none'
+            });
+        }
+
     } catch (error) {
-        console.error('语音记录保存失败:', error);
-        uni.showToast({ title: '保存失败，请稍后重试', icon: 'none' });
+        console.error('语音识别失败:', error);
+        uni.showToast({
+            title: '网络错误，请重试',
+            icon: 'none'
+        });
     } finally {
         uni.hideLoading();
     }
@@ -533,6 +659,19 @@ const handleVoiceRecognitionResult = async (text) => {
         margin-bottom: 16rpx;
     }
 
+    .quick-record-input {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 76rpx;
+        margin-bottom: 16rpx;
+        padding: 0 20rpx;
+        border: 1rpx solid #d7ead7;
+        border-radius: 12rpx;
+        background: #f8fdf8;
+        color: #111827;
+        font-size: 28rpx;
+    }
+
     .voice-entry-actions {
         display: flex;
         gap: 16rpx;
@@ -540,6 +679,7 @@ const handleVoiceRecognitionResult = async (text) => {
     }
 
     .voice-btn {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -547,9 +687,31 @@ const handleVoiceRecognitionResult = async (text) => {
         padding: 14rpx 24rpx;
         border-radius: 999rpx;
         background: #4CAF50;
+        overflow: visible;
+        z-index: 1;
+
+        &.listening {
+            background: #2196F3;
+            box-shadow: 0 8rpx 24rpx rgba(33, 150, 243, 0.28);
+
+            &::before,
+            &::after {
+                content: '';
+                position: absolute;
+                inset: -10rpx;
+                border: 2rpx solid rgba(33, 150, 243, 0.55);
+                border-radius: 999rpx;
+                z-index: -1;
+                animation: voice-ripple 1.6s ease-out infinite;
+            }
+
+            &::after {
+                animation-delay: .8s;
+            }
+        }
 
         &.recording {
-            background: #ff7043;
+            background: #1E88E5;
         }
 
         &.secondary {
@@ -567,8 +729,33 @@ const handleVoiceRecognitionResult = async (text) => {
         }
     }
 
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    @keyframes voice-ripple {
+        0% {
+            opacity: .75;
+            transform: scale(.9);
+        }
+        70% {
+            opacity: .16;
+            transform: scale(1.28);
+        }
+        100% {
+            opacity: 0;
+            transform: scale(1.35);
+        }
+    }
+
     .voice-result,
-    .voice-match-result {
+    .voice-match-result,
+    .voice-unmatch-result {
         margin-top: 8rpx;
         display: flex;
         flex-direction: column;
@@ -578,12 +765,24 @@ const handleVoiceRecognitionResult = async (text) => {
     .voice-result-label {
         font-size: 22rpx;
         color: #7a7a7a;
+
+        &.warning {
+            color: #ff9800;
+        }
     }
 
     .voice-result-text,
     .voice-match-item {
         font-size: 24rpx;
         color: #333;
+    }
+
+    .voice-unmatch-item {
+        font-size: 24rpx;
+        color: #ff9800;
+        background: #fff3e0;
+        padding: 4rpx 8rpx;
+        border-radius: 4rpx;
     }
 }
 
@@ -639,11 +838,15 @@ const handleVoiceRecognitionResult = async (text) => {
 .food-content {
     flex: 1;
     min-width: 0;
+    display: flex;        /* 新增 */
+    flex-direction: column; /* 新增 */
+}
 
-    .food-scroll {
-        height: 100%;
-        padding: 0 20rpx;
-    }
+.food-scroll {
+    flex: 1;              /* 改为 flex:1 替代 height:100% */
+    min-height: 0;        /* 新增，允许 flex 子元素收缩 */
+    padding: 0 20rpx;
+    box-sizing: border-box;
 }
 
 .food-empty-state {
@@ -665,8 +868,6 @@ const handleVoiceRecognitionResult = async (text) => {
     margin-bottom: 40rpx;
 
     .category-title {
-        position: sticky;
-        top: 0;
         background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
         padding: 20rpx 0;
         z-index: 10;
@@ -778,48 +979,62 @@ const handleVoiceRecognitionResult = async (text) => {
     }
 }
 
-/* 分量弹窗样式 */
+/* 分量弹窗样式 - 优化版 */
 .portion-input-popup {
-    width: 85%;
+    width: 86%;
+    max-width: 600rpx;
     background: #fff;
-    border-radius: 16rpx;
-    padding: 24rpx;
+    border-radius: 24rpx;
+    padding: 36rpx 32rpx 28rpx;
+    overflow: hidden;
+    box-sizing: border-box;
+    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.12);
 
     .portion-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20rpx;
+        margin-bottom: 28rpx;
 
         .portion-title {
-            font-size: 28rpx;
-            font-weight: 600;
-            color: #333;
+            font-size: 32rpx;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: 1rpx;
         }
 
         .portion-close {
-            width: 40rpx;
-            height: 40rpx;
+            width: 48rpx;
+            height: 48rpx;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 50%;
+            background: #f5f5f5;
+            transition: background 0.2s;
+
+            &:active {
+                background: #e8e8e8;
+            }
         }
     }
 
     .portion-content {
-        margin-bottom: 24rpx;
+        margin-bottom: 32rpx;
 
         .food-summary {
             display: flex;
-            gap: 16rpx;
-            margin-bottom: 20rpx;
-            padding-bottom: 20rpx;
+            gap: 20rpx;
+            margin-bottom: 28rpx;
+            padding-bottom: 24rpx;
             border-bottom: 1rpx solid #f0f0f0;
 
             .summary-image {
-                width: 100rpx;
-                height: 100rpx;
-                border-radius: 8rpx;
+                width: 120rpx;
+                height: 120rpx;
+                border-radius: 16rpx;
+                box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+                flex-shrink: 0;
             }
 
             .summary-info {
@@ -827,76 +1042,96 @@ const handleVoiceRecognitionResult = async (text) => {
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                gap: 4rpx;
+                gap: 6rpx;
 
                 .summary-name {
-                    font-size: 28rpx;
-                    font-weight: 600;
-                    color: #333;
+                    font-size: 30rpx;
+                    font-weight: 700;
+                    color: #1a1a2e;
                 }
 
                 .summary-unit {
-                    font-size: 22rpx;
-                    color: #666;
+                    font-size: 24rpx;
+                    color: #888;
+                    background: #f8f8f8;
+                    display: inline-block;
+                    padding: 4rpx 12rpx;
+                    border-radius: 6rpx;
+                    align-self: flex-start;
                 }
             }
         }
 
         .input-section {
-            margin-bottom: 20rpx;
+            margin-bottom: 24rpx;
 
             .input-label {
-                font-size: 24rpx;
-                color: #333;
-                margin-bottom: 8rpx;
+                font-size: 26rpx;
+                font-weight: 600;
+                color: #1a1a2e;
+                margin-bottom: 12rpx;
                 display: block;
             }
 
             .portion-input {
+                box-sizing: border-box;
                 width: 100%;
-                padding: 12rpx 16rpx;
-                border: 1rpx solid #e0e0e0;
-                border-radius: 12rpx;
-               font-size: 30rpx;
-                               color: #111827;
-                               font-weight: 600;
-                               line-height: 1.4;
+                height: 88rpx;
+                padding: 0 24rpx;
+                border: 2rpx solid #d0d0d0;
+                border-radius: 16rpx;
+                font-size: 32rpx;
+                color: #111827;
+                font-weight: 700;
+                line-height: 88rpx;
+                background: #fff;
+                &:focus {
+                    border-color: #4CAF50;
+                }
             }
         }
 
         .nutrition-result {
-            margin-bottom: 20rpx;
-            padding: 16rpx;
-            background: #f8fdf8;
-            border-radius: 8rpx;
+            margin-bottom: 24rpx;
+            padding: 20rpx;
+            background: linear-gradient(135deg, #f0faf0 0%, #f8fff8 100%);
+            border-radius: 16rpx;
+            border: 1rpx solid #e8f5e8;
 
             .result-label {
                 font-size: 24rpx;
-                color: #333;
-                margin-bottom: 8rpx;
-                display: block;
+                font-weight: 600;
+                color: #2e7d32;
+                margin-bottom: 14rpx;
+                display: flex;
+                align-items: center;
+                gap: 6rpx;
             }
 
             .nutrition-items {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8rpx;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10rpx;
 
                 .nutrition-item {
-                    font-size: 22rpx;
-                    color: #666;
-                    background: #fff;
-                    padding: 4rpx 8rpx;
-                    border-radius: 4rpx;
+                    font-size: 24rpx;
+                    color: #444;
+                    background: rgba(255, 255, 255, 0.85);
+                    padding: 10rpx 14rpx;
+                    border-radius: 10rpx;
+                    text-align: center;
+                    font-weight: 500;
+                    box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.04);
                 }
             }
         }
 
         .time-section {
             .time-label {
-                font-size: 24rpx;
-                color: #333;
-                margin-bottom: 8rpx;
+                font-size: 26rpx;
+                font-weight: 600;
+                color: #1a1a2e;
+                margin-bottom: 12rpx;
                 display: block;
             }
 
@@ -904,41 +1139,62 @@ const handleVoiceRecognitionResult = async (text) => {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 12rpx 16rpx;
-                border: 1rpx solid #e0e0e0;
-                border-radius: 12rpx;
-                font-size: 24rpx;
-                color: #666;
+                padding: 16rpx 20rpx;
+                border: 2rpx solid #e8e8e8;
+                border-radius: 16rpx;
+                font-size: 26rpx;
+                color: #444;
+                background: #fafafa;
+                transition: border-color 0.2s;
+
+                &:active {
+                    border-color: #4CAF50;
+                }
             }
         }
     }
 
     .portion-footer {
         display: flex;
-        gap: 16rpx;
+        gap: 20rpx;
 
         .cancel-btn {
             flex: 1;
-            padding: 12rpx;
+            padding: 20rpx 0;
             background: #f5f5f5;
             color: #666;
             border: none;
-            border-radius: 8rpx;
-            font-size: 24rpx;
+            border-radius: 16rpx;
+            font-size: 28rpx;
+            font-weight: 500;
+            transition: background 0.2s;
+
+            &:active {
+                background: #e8e8e8;
+            }
         }
 
         .save-btn {
             flex: 1;
-            padding: 12rpx;
-            background: #4CAF50;
+            padding: 20rpx 0;
+            background: linear-gradient(135deg, #4CAF50, #43a047);
             color: #fff;
             border: none;
-            border-radius: 8rpx;
-            font-size: 24rpx;
+            border-radius: 16rpx;
+            font-size: 28rpx;
+            font-weight: 600;
+            box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+            transition: opacity 0.2s, box-shadow 0.2s;
+
+            &:active:not(:disabled) {
+                opacity: 0.9;
+                box-shadow: 0 2rpx 6rpx rgba(76, 175, 80, 0.2);
+            }
 
             &:disabled {
                 background: #ccc;
                 color: #999;
+                box-shadow: none;
             }
         }
     }

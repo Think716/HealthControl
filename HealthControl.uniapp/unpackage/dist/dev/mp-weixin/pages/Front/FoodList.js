@@ -25,7 +25,7 @@ const _sfc_main = {
     const UserId = common_vendor.computed(() => commonStore.UserId);
     const FoodTypeList = common_vendor.ref([]);
     const activeCategory = common_vendor.ref(0);
-    const scrollTop = common_vendor.ref(0);
+    const scrollIntoView = common_vendor.ref("");
     const selectedFood = common_vendor.ref(null);
     common_vendor.ref(null);
     const portionPopup = common_vendor.ref(null);
@@ -36,23 +36,28 @@ const _sfc_main = {
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     };
     const recordTime = common_vendor.ref(formatRecordTimeForPicker());
+    const parsePickerDateTime = (value) => {
+      if (!value)
+        return /* @__PURE__ */ new Date();
+      const [datePart, timePart = "00:00"] = value.split(" ");
+      const [year, month, day] = datePart.split("-").map(Number);
+      const [hour, minute] = timePart.split(":").map(Number);
+      return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
+    };
     const calculatedNutrition = common_vendor.ref(null);
-    const isRecording = common_vendor.ref(false);
+    const quickRecordText = common_vendor.ref("");
     const voiceText = common_vendor.ref("");
     const voiceMatchedPreview = common_vendor.ref([]);
+    const voiceUnmatchedTexts = common_vendor.ref([]);
     const foodLoadError = common_vendor.ref("");
-    let plugin = null;
-    let manager = null;
     const inputStyles = {
-      borderColor: "#4CAF50",
-      borderRadius: "12rpx"
+      color: "#111827",
+      fontSize: "32rpx",
+      fontWeight: "700"
     };
     common_vendor.reactive({});
     const canSave = common_vendor.computed(() => {
       return portionAmount.value && parseFloat(portionAmount.value) > 0 && selectedUnit.value;
-    });
-    common_vendor.onLoad(async (option) => {
-      initVoicePlugin();
     });
     common_vendor.onShow(async () => {
       await GetFoodTypeListApi();
@@ -73,22 +78,16 @@ const _sfc_main = {
           foodLoadError.value = "食物列表为空，请先在后台维护食物数据";
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:241", "获取食物列表失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:261", "获取食物列表失败:", error);
         FoodTypeList.value = [];
         foodLoadError.value = "食物列表加载失败，请检查网络或服务";
       }
     };
     const selectCategory = async (index, categoryId) => {
       activeCategory.value = index;
+      scrollIntoView.value = "";
       await common_vendor.nextTick$1();
-      const query = common_vendor.index.createSelectorQuery();
-      query.select(`#category-${categoryId}`).boundingClientRect();
-      query.selectViewport().scrollOffset();
-      query.exec((res) => {
-        if (res[0]) {
-          scrollTop.value = res[0].top - 100;
-        }
-      });
+      scrollIntoView.value = `category-${categoryId}`;
     };
     const onFoodScroll = (e) => {
       e.detail.scrollTop;
@@ -129,6 +128,15 @@ const _sfc_main = {
       calculatedNutrition.value = null;
       recordTime.value = formatRecordTimeForPicker();
     };
+    const onPortionInput = (e) => {
+      let val = e.detail.value;
+      val = val.replace(/[^\d.]/g, "");
+      const dotIndex = val.indexOf(".");
+      if (dotIndex !== -1) {
+        val = val.substring(0, dotIndex + 1) + val.substring(dotIndex + 1).replace(/\./g, "");
+      }
+      portionAmount.value = val;
+    };
     const onTimeChange = (e) => {
       recordTime.value = e.detail.value;
     };
@@ -164,16 +172,14 @@ const _sfc_main = {
           });
           return;
         }
+        const parsedAmount = parseFloat(portionAmount.value);
         const result = await utils_http.Post("/DietRecord/CreateOrEdit", {
-          UserId: UserId.value,
+          RecordUserId: UserId.value,
           FoodId: selectedUnit.value.food.Id,
-          UnitId: selectedUnit.value.unit.Id,
-          Amount: parseFloat(portionAmount.value),
-          RecordTime: utils_comm.GetFormatFullDate(new Date(recordTime.value.replace(" ", "T"))),
-          Calories: parseFloat(nutrition.calories),
-          Protein: parseFloat(nutrition.protein),
-          Carbohydrates: parseFloat(nutrition.carbohydrates),
-          Fat: parseFloat(nutrition.fat)
+          // ← 加上 FoodId
+          FoodUnitId: selectedUnit.value.unit.Id,
+          RecordValue: Math.max(1, Math.round(parsedAmount)),
+          RecordTime: utils_comm.GetFormatFullDate(parsePickerDateTime(recordTime.value))
         });
         if (result.Success) {
           common_vendor.index.showToast({
@@ -192,62 +198,24 @@ const _sfc_main = {
           title: (error == null ? void 0 : error.Msg) || (error == null ? void 0 : error.message) || "网络错误，请重试",
           icon: "none"
         });
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:399", "保存饮食记录失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:419", "保存饮食记录失败:", error);
       } finally {
         common_vendor.index.hideLoading();
       }
     };
-    const initVoicePlugin = () => {
-      try {
-        plugin = requirePlugin("WechatSI");
-        manager = plugin.getRecordRecognitionManager();
-        manager.onStart = () => {
-          isRecording.value = true;
-        };
-        manager.onStop = async (res) => {
-          isRecording.value = false;
-          if (!(res == null ? void 0 : res.result)) {
-            common_vendor.index.showToast({ title: "未识别到有效语音", icon: "none" });
-            return;
-          }
-          voiceText.value = res.result;
-          await handleVoiceRecognitionResult(res.result);
-        };
-        manager.onError = (error) => {
-          isRecording.value = false;
-          common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:427", "语音识别失败:", error);
-          common_vendor.index.showToast({
-            title: "语音识别失败，请重试",
-            icon: "none"
-          });
-        };
-      } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:434", "初始化微信语音插件失败:", error);
-      }
-    };
-    const toggleVoiceRecording = () => {
-      if (!manager) {
-        common_vendor.index.showToast({ title: "语音能力未初始化，请检查插件配置", icon: "none" });
-        return;
-      }
-      if (isRecording.value) {
-        manager.stop();
-        return;
-      }
-      manager.start({
-        lang: "zh_CN",
-        duration: 3e4
-      });
-    };
     const clearVoiceResult = () => {
+      quickRecordText.value = "";
       voiceText.value = "";
       voiceMatchedPreview.value = [];
+      voiceUnmatchedTexts.value = [];
     };
-    const handleVoiceRecognitionResult = async (text) => {
-      if (!text || !text.trim()) {
-        common_vendor.index.showToast({ title: "未识别到有效语音", icon: "none" });
+    const submitQuickRecord = async () => {
+      const text = quickRecordText.value.trim();
+      if (!text) {
+        common_vendor.index.showToast({ title: "请输入饮食描述", icon: "none" });
         return;
       }
+      voiceText.value = text;
       common_vendor.index.showLoading({ title: "正在保存记录..." });
       try {
         const result = await utils_http.Post("/api/voice/recognize-text", {
@@ -256,21 +224,172 @@ const _sfc_main = {
           RecordTime: utils_comm.GetFormatFullDate(/* @__PURE__ */ new Date())
         });
         const data = (result == null ? void 0 : result.Data) || result;
-        const matchedItems = (data == null ? void 0 : data.matchedItems) || [];
-        const savedCount = (data == null ? void 0 : data.savedCount) || 0;
+        const matchedItems = (data == null ? void 0 : data.MatchedItems) || (data == null ? void 0 : data.matchedItems) || [];
+        const meaninglessWords = [
+          "早餐",
+          "午餐",
+          "晚餐",
+          "夜宵",
+          "宵夜",
+          "加餐",
+          "吃了",
+          "喝了",
+          "还有",
+          "和",
+          "以及",
+          "一个",
+          "一杯",
+          "一些",
+          "一点",
+          "今天",
+          "刚刚",
+          "记录",
+          "一下",
+          "我"
+          // ← 补充缺失项
+        ];
+        const unmatchedTexts = ((data == null ? void 0 : data.UnmatchedTexts) || (data == null ? void 0 : data.unmatchedTexts) || []).filter((item) => {
+          return !meaninglessWords.includes(item);
+        });
+        const savedCount = (data == null ? void 0 : data.SavedCount) || (data == null ? void 0 : data.savedCount) || 0;
         voiceMatchedPreview.value = matchedItems.map((item) => ({
-          foodName: item.foodName,
-          amount: item.count,
-          unitName: item.unitName
+          foodName: item.FoodName || item.foodName,
+          amount: item.Count || item.count,
+          unitName: item.UnitName || item.unitName
         }));
+        voiceUnmatchedTexts.value = unmatchedTexts;
         if (savedCount > 0) {
-          common_vendor.index.showToast({ title: `已记录${savedCount}条`, icon: "success" });
+          if (unmatchedTexts.length > 0) {
+            common_vendor.index.showToast({
+              title: `已记录${savedCount}条，${unmatchedTexts.length}条未识别`,
+              icon: "success",
+              duration: 3e3
+            });
+          } else {
+            common_vendor.index.showToast({ title: `已记录${savedCount}条`, icon: "success" });
+          }
           return;
         }
         common_vendor.index.showToast({ title: "未匹配到食物，请更换描述", icon: "none" });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:499", "语音记录保存失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:484", "快速记录保存失败:", error);
         common_vendor.index.showToast({ title: "保存失败，请稍后重试", icon: "none" });
+      } finally {
+        common_vendor.index.hideLoading();
+      }
+    };
+    const recorderManager = common_vendor.index.getRecorderManager();
+    const isRecording = common_vendor.ref(false);
+    const audioFilePath = common_vendor.ref("");
+    recorderManager.onStart(() => {
+      isRecording.value = true;
+      common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:499", "[Voice] 录音已开始");
+      common_vendor.index.showLoading({ title: "正在聆听..." });
+    });
+    recorderManager.onStop((res) => {
+      isRecording.value = false;
+      common_vendor.index.hideLoading();
+      audioFilePath.value = res.tempFilePath;
+      common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:508", "[Voice] 录音结束, 文件路径:", res.tempFilePath);
+      common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:509", "[Voice] 录音时长:", res.duration, "ms");
+      uploadAndRecognizeAudio(res.tempFilePath);
+    });
+    recorderManager.onError((err) => {
+      common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:516", "[Voice] 录音错误:", JSON.stringify(err));
+      isRecording.value = false;
+      common_vendor.index.hideLoading();
+      let errorMsg = "录音失败";
+      if (err.errMsg && err.errMsg.includes("permission")) {
+        errorMsg = "请允许麦克风权限后再试";
+      } else if (err.errMsg && err.errMsg.includes("system")) {
+        errorMsg = "系统录音功能异常，请重试";
+      }
+      common_vendor.index.showToast({
+        title: errorMsg,
+        icon: "none",
+        duration: 2e3
+      });
+    });
+    const toggleVoice = () => {
+      if (isRecording.value) {
+        stopVoiceRecognition();
+      } else {
+        startVoiceRecognition();
+      }
+    };
+    const startVoiceRecognition = () => {
+      common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:545", "[Voice] 点击语音输入按钮");
+      try {
+        recorderManager.start({
+          duration: 1e4,
+          sampleRate: 16e3,
+          numberOfChannels: 1,
+          encodeBitRate: 48e3,
+          format: "wav"
+        });
+        common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:561", "[Voice] start() 调用成功");
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:563", "[Voice] start() 异常:", e);
+        common_vendor.index.showToast({ title: "录音启动失败", icon: "none" });
+      }
+    };
+    const stopVoiceRecognition = () => {
+      common_vendor.index.__f__("log", "at pages/Front/FoodList.vue:570", "[Voice] 停止录音");
+      recorderManager.stop();
+    };
+    const uploadAndRecognizeAudio = async (filePath) => {
+      common_vendor.index.showLoading({ title: "识别中..." });
+      try {
+        const uploadRes = await new Promise((resolve, reject) => {
+          common_vendor.index.uploadFile({
+            url: `${"http://localhost:7245"}/api/voice/recognize`,
+            filePath,
+            name: "file",
+            formData: {
+              userId: UserId.value
+            },
+            success: resolve,
+            fail: reject
+          });
+        });
+        const result = JSON.parse(uploadRes.data);
+        if (result.Success && result.Data) {
+          const data = result.Data;
+          const matchedItems = data.matchedItems || [];
+          const unmatchedTexts = data.unmatchedTexts || [];
+          const savedCount = data.savedCount || 0;
+          voiceMatchedPreview.value = matchedItems.map((item) => ({
+            foodName: item.foodName,
+            amount: item.count,
+            unitName: item.unitName
+          }));
+          voiceUnmatchedTexts.value = unmatchedTexts.filter((text) => {
+            const meaninglessWords = ["早餐", "午餐", "晚餐", "吃了", "喝了"];
+            return !meaninglessWords.some((word) => text.includes(word));
+          });
+          if (savedCount > 0) {
+            common_vendor.index.showToast({
+              title: `已记录${savedCount}条`,
+              icon: "success"
+            });
+          } else {
+            common_vendor.index.showToast({
+              title: "未匹配到食物",
+              icon: "none"
+            });
+          }
+        } else {
+          common_vendor.index.showToast({
+            title: result.Msg || "识别失败",
+            icon: "none"
+          });
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/Front/FoodList.vue:629", "语音识别失败:", error);
+        common_vendor.index.showToast({
+          title: "网络错误，请重试",
+          icon: "none"
+        });
       } finally {
         common_vendor.index.hideLoading();
       }
@@ -288,27 +407,37 @@ const _sfc_main = {
           ["left-text"]: "返回",
           title: "🥗 健康食物库"
         }),
-        c: common_vendor.p({
-          type: isRecording.value ? "mic-filled" : "mic",
+        c: common_vendor.o(submitQuickRecord),
+        d: quickRecordText.value,
+        e: common_vendor.o(($event) => quickRecordText.value = $event.detail.value),
+        f: common_vendor.p({
+          type: isRecording.value ? "sound-filled" : "mic",
           size: "20",
           color: "#fff"
         }),
-        d: common_vendor.t(isRecording.value ? "结束录音" : "语音录入"),
-        e: isRecording.value ? 1 : "",
-        f: common_vendor.o(toggleVoiceRecording),
-        g: common_vendor.p({
+        g: common_vendor.t(isRecording.value ? "停止录音" : "语音输入"),
+        h: isRecording.value ? 1 : "",
+        i: isRecording.value || !!voiceText.value ? 1 : "",
+        j: common_vendor.o(toggleVoice),
+        k: common_vendor.p({
+          type: "compose",
+          size: "20",
+          color: "#fff"
+        }),
+        l: common_vendor.o(submitQuickRecord),
+        m: common_vendor.p({
           type: "clear",
           size: "18",
           color: "#4CAF50"
         }),
-        h: common_vendor.o(clearVoiceResult),
-        i: voiceText.value
+        n: common_vendor.o(clearVoiceResult),
+        o: voiceText.value
       }, voiceText.value ? {
-        j: common_vendor.t(voiceText.value)
+        p: common_vendor.t(voiceText.value)
       } : {}, {
-        k: voiceMatchedPreview.value.length > 0
+        q: voiceMatchedPreview.value.length > 0
       }, voiceMatchedPreview.value.length > 0 ? {
-        l: common_vendor.f(voiceMatchedPreview.value, (item, index, i0) => {
+        r: common_vendor.f(voiceMatchedPreview.value, (item, index, i0) => {
           return {
             a: common_vendor.t(item.foodName),
             b: common_vendor.t(item.amount),
@@ -317,7 +446,16 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        m: common_vendor.f(FoodTypeList.value, (category, index, i0) => {
+        s: voiceUnmatchedTexts.value.length > 0
+      }, voiceUnmatchedTexts.value.length > 0 ? {
+        t: common_vendor.f(voiceUnmatchedTexts.value, (text, index, i0) => {
+          return {
+            a: common_vendor.t(text),
+            b: index
+          };
+        })
+      } : {}, {
+        v: common_vendor.f(FoodTypeList.value, (category, index, i0) => {
           return {
             a: common_vendor.t(category.Name),
             b: category.Id,
@@ -325,9 +463,9 @@ const _sfc_main = {
             d: common_vendor.o(($event) => selectCategory(index, category.Id), category.Id)
           };
         }),
-        n: FoodTypeList.value.length > 0
+        w: FoodTypeList.value.length > 0
       }, FoodTypeList.value.length > 0 ? {
-        o: common_vendor.f(FoodTypeList.value, (category, k0, i0) => {
+        x: common_vendor.f(FoodTypeList.value, (category, k0, i0) => {
           return {
             a: common_vendor.t(category.Name),
             b: common_vendor.f(category.Foods, (food, k1, i1) => {
@@ -357,56 +495,55 @@ const _sfc_main = {
             d: `category-${category.Id}`
           };
         }),
-        p: common_vendor.o(onFoodScroll),
-        q: scrollTop.value
+        y: common_vendor.o(onFoodScroll),
+        z: scrollIntoView.value
       } : {
-        r: common_vendor.p({
+        A: common_vendor.p({
           type: "info",
           size: "28",
           color: "#7cb67c"
         }),
-        s: common_vendor.t(foodLoadError.value || "暂无食物数据，请稍后重试")
+        B: common_vendor.t(foodLoadError.value || "暂无食物数据，请稍后重试")
       }, {
-        t: selectedUnit.value
+        C: selectedUnit.value
       }, selectedUnit.value ? common_vendor.e({
-        v: common_vendor.p({
+        D: common_vendor.p({
           type: "closeempty",
           size: "24",
           color: "#666"
         }),
-        w: common_vendor.o(closePortionPopup),
-        x: selectedUnit.value.food.Cover,
-        y: common_vendor.t(selectedUnit.value.food.Name),
-        z: common_vendor.t(selectedUnit.value.unit.UnitName),
-        A: common_vendor.t(selectedUnit.value.unit.UnitValue),
-        B: common_vendor.s(inputStyles),
-        C: portionAmount.value,
-        D: common_vendor.o(($event) => portionAmount.value = $event.detail.value),
-        E: calculatedNutrition.value
+        E: common_vendor.o(closePortionPopup),
+        F: selectedUnit.value.food.Cover,
+        G: common_vendor.t(selectedUnit.value.food.Name),
+        H: common_vendor.t(selectedUnit.value.unit.UnitName),
+        I: common_vendor.t(selectedUnit.value.unit.UnitValue),
+        J: common_vendor.s(inputStyles),
+        K: common_vendor.o([($event) => portionAmount.value = $event.detail.value, onPortionInput]),
+        L: portionAmount.value,
+        M: calculatedNutrition.value
       }, calculatedNutrition.value ? {
-        F: common_vendor.t(calculatedNutrition.value.calories),
-        G: common_vendor.t(calculatedNutrition.value.protein),
-        H: common_vendor.t(calculatedNutrition.value.carbohydrates),
-        I: common_vendor.t(calculatedNutrition.value.fat)
+        N: common_vendor.t(calculatedNutrition.value.calories),
+        O: common_vendor.t(calculatedNutrition.value.protein),
+        P: common_vendor.t(calculatedNutrition.value.carbohydrates),
+        Q: common_vendor.t(calculatedNutrition.value.fat)
       } : {}, {
-        J: common_vendor.t(recordTime.value),
-        K: common_vendor.p({
+        R: common_vendor.t(recordTime.value),
+        S: common_vendor.p({
           type: "arrowright",
           size: "18",
           color: "#999"
         }),
-        L: recordTime.value,
-        M: common_vendor.o(onTimeChange),
-        N: common_vendor.o(closePortionPopup),
-        O: !canSave.value,
-        P: common_vendor.o(saveDietRecord)
+        T: recordTime.value,
+        U: common_vendor.o(onTimeChange),
+        V: common_vendor.o(closePortionPopup),
+        W: !canSave.value,
+        X: common_vendor.o(saveDietRecord)
       }) : {}, {
-        Q: common_vendor.sr(portionPopup, "05c655f0-4", {
+        Y: common_vendor.sr(portionPopup, "05c655f0-5", {
           "k": "portionPopup"
         }),
-        R: common_vendor.p({
-          type: "center",
-          ["background-color"]: "rgba(0,0,0,0.5)"
+        Z: common_vendor.p({
+          type: "center"
         })
       });
     };

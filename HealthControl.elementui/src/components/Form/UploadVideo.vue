@@ -1,10 +1,8 @@
 <template>
     <div class="upload-video-container">
-        <!-- 上传区域 -->
-        <el-upload :action="uploadUrl" :file-list="fileList" :on-success="handleUploadSuccess" :on-remove="handleRemove"
-            :before-upload="beforeUpload" :on-exceed="handleExceed" :on-error="handleError" :limit="limit"
-            :multiple="multiple" :accept="accept" class="video-uploader">
-            <!-- 上传按钮 -->
+        <el-upload :action="uploadUrl" :data="uploadData" :file-list="fileList" :on-success="handleUploadSuccess"
+            :on-remove="handleRemove" :before-upload="beforeUpload" :on-exceed="handleExceed" :on-error="handleError"
+            :limit="limit" :multiple="multiple" :accept="accept" class="video-uploader">
             <div v-if="videoList.length < limit" class="upload-trigger">
                 <el-icon>
                     <Upload />
@@ -12,19 +10,16 @@
                 <div class="upload-text">点击上传视频</div>
             </div>
 
-            <!-- 提示信息 -->
             <template #tip>
                 <div class="el-upload__tip">
                     <span>支持格式: {{ accept || '.mp4, .avi, .mov, .wmv, .flv, .mkv' }}</span>
-                    <span class="size-tip">文件大小不超过{{ maxSize }}MB</span>
+                    <span class="size-tip">文件大小不超过 {{ maxSize }}MB</span>
                 </div>
             </template>
         </el-upload>
 
-        <!-- 视频列表展示 -->
         <div class="video-list" v-if="videoList.length > 0">
             <div v-for="(item, index) in videoList" :key="index" class="video-item">
-                <!-- 视频封面 -->
                 <div class="video-cover" @click="previewVideo(item)">
                     <video v-if="item.url" class="cover-image" :src="item.url"></video>
                     <img v-else src="@/assets/视频封面.png" class="cover-image" alt="视频封面">
@@ -35,7 +30,6 @@
                     </div>
                 </div>
 
-                <!-- 视频信息 -->
                 <div class="video-info">
                     <div class="video-name">{{ item.name || '视频文件' }}</div>
                     <div class="video-actions">
@@ -54,7 +48,6 @@
             </div>
         </div>
 
-        <!-- 视频预览对话框 -->
         <el-dialog v-model="previewVisible" title="视频预览" width="800px" class="preview-dialog" append-to-body>
             <div class="video-preview-wrapper">
                 <video v-if="previewUrl" controls autoplay class="preview-video" :src="previewUrl"></video>
@@ -67,9 +60,8 @@
 import { GetFileNameByPath } from "@/utils/comm.js";
 import { Delete, Upload, VideoPlay, View } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { onMounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
-// 定义props
 const props = defineProps({
     modelValue: {
         type: [Number, String],
@@ -89,50 +81,45 @@ const props = defineProps({
     },
     maxSize: {
         type: Number,
-        default: 1024 // 默认1GB
-    }
+        default: 1024
+    },
+    category: {
+        type: String,
+        default: 'uploads'
+    },
 })
 
-// 定义emit
 const emit = defineEmits(['update:modelValue', 'change'])
 
-// 响应式数据
-const uploadUrl = ref(import.meta.env.VITE_API_BASE_URL + "/File/BatchUpload")
-const videoList = ref([]) // 使用videoList替代fileList
-const fileList = ref([]) // 用于同步el-upload的文件列表
+const uploadUrl = import.meta.env.VITE_API_BASE_URL + "/File/BatchUpload"
+const uploadData = computed(() => ({ category: props.category || 'uploads' }))
+const videoList = ref([])
+const fileList = ref([])
 const previewVisible = ref(false)
 const previewUrl = ref("")
 const uploadLoading = ref(false)
 
-// 初始化视频列表
-onMounted(() => {
-    if (props.modelValue) {
-        const urls = props.modelValue.split(",")
-        videoList.value = urls.map(x => {
-            return {
-                url: x,
-                name: GetFileNameByPath(x),
-                status: "success"
-            }
-        })
-        // 同步到fileList
-        fileList.value = videoList.value
+watch(() => props.modelValue, (newVal) => {
+    if (!newVal) {
+        videoList.value = []
+        fileList.value = []
+        return
     }
-})
+    videoList.value = String(newVal).split(",").filter(Boolean).map(x => ({
+        url: x,
+        name: GetFileNameByPath(x),
+        status: "success"
+    }))
+    fileList.value = [...videoList.value]
+}, { immediate: true })
 
-// 方法定义
 const beforeUpload = (file) => {
-    // 验证文件类型
-    const isValidType = props.accept.split(',').some(type => {
-        return file.name.toLowerCase().endsWith(type.trim())
-    })
-
+    const isValidType = props.accept.split(',').some(type => file.name.toLowerCase().endsWith(type.trim()))
     if (!isValidType) {
         ElMessage.error('请上传正确的视频格式!')
         return false
     }
 
-    // 验证文件大小 (MB)
     const isLessThanMaxSize = file.size / 1024 / 1024 < props.maxSize
     if (!isLessThanMaxSize) {
         ElMessage.error(`视频大小不能超过 ${props.maxSize}MB!`)
@@ -153,7 +140,7 @@ const previewVideo = (item) => {
 }
 
 const handleExceed = () => {
-    ElMessage.warning(`最多只能上传 ${props.limit} 个视频!`)
+    ElMessage.warning(`最多只能上传 ${props.limit} 个视频`)
 }
 
 const handleError = () => {
@@ -163,7 +150,7 @@ const handleError = () => {
 
 const removeVideo = (index) => {
     videoList.value.splice(index, 1)
-    fileList.value = [...videoList.value] // 同步到fileList
+    fileList.value = [...videoList.value]
     updateValue()
 }
 
@@ -177,15 +164,13 @@ const handleUploadSuccess = (response, file) => {
     uploadLoading.value = false
 
     if (response && response.Success && response.Data && response.Data.length > 0) {
-        // 添加到视频列表
         const newVideo = {
             name: file.name,
             url: response.Data[0].Url,
             status: "success"
         }
         videoList.value.push(newVideo)
-        fileList.value = [...videoList.value] // 同步到fileList
-
+        fileList.value = [...videoList.value]
         updateValue()
         ElMessage.success('视频上传成功!')
     } else {
@@ -194,28 +179,23 @@ const handleUploadSuccess = (response, file) => {
 }
 
 const handleRemove = (file) => {
-    const index = videoList.value.findIndex(item => item.name === file.name)
+    const index = videoList.value.findIndex(item => item.name === file.name || item.url === file.url)
     if (index !== -1) {
-        videoList.value.splice(index, 1)
-        fileList.value = [...videoList.value] // 同步到fileList
-        updateValue()
+        removeVideo(index)
     }
 }
 </script>
 
 <style scoped>
-/* 上传容器 */
 .upload-video-container {
     width: 100%;
     margin-bottom: 20px;
 }
 
-/* 上传区域样式 */
 .video-uploader {
     width: 100%;
 }
 
-/* 上传触发器样式 */
 .upload-trigger {
     display: flex;
     flex-direction: column;
@@ -245,7 +225,6 @@ const handleRemove = (file) => {
     color: #606266;
 }
 
-/* 提示信息样式 */
 .el-upload__tip {
     line-height: 1.5;
     margin-top: 10px;
@@ -258,7 +237,6 @@ const handleRemove = (file) => {
     color: #ED5F18;
 }
 
-/* 视频列表样式 */
 .video-list {
     margin-top: 20px;
     display: grid;
@@ -280,7 +258,6 @@ const handleRemove = (file) => {
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 视频封面样式 */
 .video-cover {
     position: relative;
     width: 100%;
@@ -326,7 +303,6 @@ const handleRemove = (file) => {
     opacity: 1;
 }
 
-/* 视频信息样式 */
 .video-info {
     flex: 1;
     display: flex;
@@ -352,7 +328,6 @@ const handleRemove = (file) => {
     padding: 0;
 }
 
-/* 预览对话框样式 */
 .preview-dialog :deep(.el-dialog__body) {
     padding: 0;
 }

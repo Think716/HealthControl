@@ -22,6 +22,11 @@ const useCommonStore = common_vendor.defineStore("common", {
         icon: common_assets.HealthIndicatorIcon
       },
       {
+        url: "/pages/Front/CommunityList",
+        label: "社区",
+        icon: common_assets.HomeIcon
+      },
+      {
         url: "/pages/Front/UserCenter",
         label: "个人中心",
         icon: common_assets.UserIcon

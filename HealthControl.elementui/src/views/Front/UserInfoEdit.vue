@@ -21,7 +21,7 @@
                         <el-input v-model="formData.PhoneNumber" clearable></el-input>
                     </el-form-item>
                     <el-form-item label="头像" prop="ImageUrls">
-                        <UploadImages v-model="formData.ImageUrls"></UploadImages>
+                        <UploadImages category="user-avatars" v-model="formData.ImageUrls"></UploadImages>
                     </el-form-item>
 
                     <el-form-item label="出生年月" prop="Birth">

@@ -15,6 +15,7 @@
             <!-- 选中日期显示 -->
             <view class="selected-date">
                 <text class="date-text">{{ selectedDateText }}</text>
+                <button v-if="DietRecordList.length > 0" class="share-btn" @click="shareDietRecord" size="mini">分享今日饮食到社区</button>
             </view>
 
             <!-- 饮食记录列表 -->
@@ -200,6 +201,30 @@ const formatTime = (timestamp) => {
     return `${hours}:${minutes}`;
 };
 
+// 分享今日饮食到社区
+const shareDietRecord = async () => {
+    uni.showModal({
+        title: '分享饮食',
+        content: '确认将今日饮食记录分享到社区吗？',
+        success: async (res) => {
+            if (res.confirm) {
+                const year = selectedDate.value.getFullYear();
+                const month = String(selectedDate.value.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.value.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                const { Success, Msg } = await Post('/CommunityPost/ShareDietRecord', {
+                    UserId: UserId.value,
+                    Date: dateStr
+                });
+                uni.showToast({
+                    title: Success ? '已分享到社区' : (Msg || '分享失败'),
+                    icon: Success ? 'success' : 'none'
+                });
+            }
+        }
+    });
+};
+
 </script>
 
 <style scoped lang="scss">
@@ -235,6 +260,17 @@ const formatTime = (timestamp) => {
     font-size: 32rpx;
     font-weight: 600;
     color: var(--primary-color);
+}
+
+.share-btn {
+    margin-top: 16rpx;
+    padding: 12rpx 24rpx;
+    border-radius: 999rpx;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 24rpx;
+    border: none;
+    line-height: 1.4;
 }
 
 /* 饮食记录容器 */

@@ -24,7 +24,7 @@ const _sfc_main = {
   __name: "UserCenter",
   setup(__props) {
     const commonStore = store_index.useCommonStore();
-    const defaultHeadImage = common_vendor.ref(common_assets.userInfoIcon);
+    const defaultHeadImage = common_vendor.ref(common_assets.defaultAvatar);
     common_vendor.computed(() => commonStore.Token);
     const UserInfo = common_vendor.computed(() => commonStore.UserInfo);
     common_vendor.computed(() => commonStore.RoleType);

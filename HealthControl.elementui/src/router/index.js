@@ -205,9 +205,73 @@ const adminRoutes = [
                 isAdmin: true,
             },
             component: () => import("../views/Admin/RecipeList.vue")
+        },
+        {
+            path: "/Admin/CommunityPostList",
+            meta: {
+                title: "健康动态管理",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/CommunityPostList.vue")
+        },
+        {
+            path: "/Admin/CommunityCommentList",
+            meta: {
+                title: "评论管理",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/CommunityCommentList.vue")
+        },
+        {
+            path: "/Admin/CommunityTagList",
+            meta: {
+                title: "标签管理",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/CommunityTagList.vue")
+        },
+        {
+            path: "/Admin/CommunityReportList",
+            meta: {
+                title: "举报管理",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/CommunityReportList.vue")
+        },
+        {
+            path: "/Admin/CommunityStats",
+            meta: {
+                title: "社区数据统计",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/CommunityStats.vue")
+        },
+        {
+            path: "/Admin/SportList",
+            meta: {
+                title: "运动项目",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/SportList.vue")
+        },
+        {
+            path: "/Admin/SportUnitList",
+            meta: {
+                title: "运动单位",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/SportUnitList.vue")
+        },	
+        {
+            path: "/Admin/FitnessVideoList",
+            meta: {
+                title: "AI健身视频",
+                isAdmin: true,
+            },
+            component: () => import("../views/Admin/FitnessVideoList.vue")
         },	
  
-      	 
+     	 
  
     ],
   },

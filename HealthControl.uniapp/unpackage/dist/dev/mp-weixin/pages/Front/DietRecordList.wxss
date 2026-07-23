@@ -37,6 +37,16 @@
   font-weight: 600;
   color: var(--primary-color);
 }
+.share-btn.data-v-3e16dfb0 {
+  margin-top: 16rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 24rpx;
+  border: none;
+  line-height: 1.4;
+}
 
 /* 饮食记录容器 */
 .diet-records-container.data-v-3e16dfb0 {

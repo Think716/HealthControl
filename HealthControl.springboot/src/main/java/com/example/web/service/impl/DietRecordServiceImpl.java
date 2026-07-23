@@ -182,8 +182,18 @@ public class DietRecordServiceImpl extends ServiceImpl<DietRecordMapper, DietRec
         DietRecord DietRecord = input.MapToEntity();
         // 调用数据库的增加或者修改方法
         saveOrUpdate(DietRecord);
-        // 把传输模型返回给前端
-        return DietRecord.MapToDto();
+
+        // 获取保存后的记录，重新查询以填充关联数据
+        DietRecord savedRecord = getById(DietRecord.getId());
+        DietRecordDto result = savedRecord.MapToDto();
+
+        // 填充关联数据（FoodDto、FoodUnitDto、RecordUserDto）
+        List<DietRecordDto> items = new ArrayList<>();
+        items.add(result);
+        DispatchItem(items);
+
+        // 把填充好关联数据的传输模型返回给前端
+        return items.get(0);
     }
 
     /**

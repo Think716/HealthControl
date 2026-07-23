@@ -109,11 +109,8 @@ const goBack = () => {
 const GetRecipeListApi = async () => {
     try {
         loadStatus.value = 'loading';
-        let {
-            Data: {
-                Items
-            }
-        } = await Post('/Recipe/List', where);
+        const { Data } = await Post('/Recipe/List', where);
+        const Items = Data?.Items || [];
 
         // 预处理每个食谱的图片列表
         const processedItems = Items.map(recipe => ({

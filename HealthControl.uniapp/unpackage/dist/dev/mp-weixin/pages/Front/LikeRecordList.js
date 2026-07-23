@@ -41,12 +41,8 @@ const _sfc_main = {
       activeTab.value = tab;
     };
     const GetLikeRecordListApi = async () => {
-      let {
-        Data: {
-          Items
-        }
-      } = await utils_http.Post("/LikeRecord/List", where);
-      LikeRecordList.value = Items;
+      const { Data } = await utils_http.Post("/LikeRecord/List", where);
+      LikeRecordList.value = (Data == null ? void 0 : Data.Items) || [];
     };
     const ShowDeleteModal = async (Id) => {
       common_vendor.index.showModal({

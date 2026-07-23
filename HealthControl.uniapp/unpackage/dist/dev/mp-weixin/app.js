@@ -18,6 +18,7 @@ if (!Math) {
   "./pages/Front/HealthIndicatorRecordList.js";
   "./pages/Front/FoodList.js";
   "./pages/Front/DietRecordList.js";
+  "./pages/Front/SportRecordList.js";
   "./pages/Front/HealthArticleList.js";
   "./pages/Front/HealthArticleForm.js";
   "./pages/Front/MyHealthArticleList.js";
@@ -30,8 +31,11 @@ if (!Math) {
   "./pages/Front/LikeRecordList.js";
   "./pages/Front/HealthView.js";
   "./pages/Front/AiAnalyse.js";
+  "./pages/Front/FitnessVideoList.js";
   "./pages/Front/HealthNoticeList.js";
   "./pages/Front/HealthNoticeForm.js";
+  "./pages/Front/CommunityList.js";
+  "./pages/Front/CommunityForm.js";
   "./pages/Front/WeChatBind.js";
 }
 const _sfc_main = {

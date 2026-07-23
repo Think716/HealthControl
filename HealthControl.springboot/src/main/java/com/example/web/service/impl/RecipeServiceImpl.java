@@ -232,6 +232,13 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
         RecipeMapper.updateById(entity);
     }
 
+    @Override
+    public void SetRecommend(RecipeDto input) {
+        Recipe entity = RecipeMapper.selectById(input.getId());
+        entity.setIsRecommend(input.getIsRecommend());
+        RecipeMapper.updateById(entity);
+    }
+
     /**
      * 推荐算法(基于行为+权重的协同过滤算法)
      */

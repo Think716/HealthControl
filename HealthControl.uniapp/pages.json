@@ -15,6 +15,7 @@
     { "path": "pages/Front/HealthIndicatorRecordList" },
     { "path": "pages/Front/FoodList" },
     { "path": "pages/Front/DietRecordList" },
+    { "path": "pages/Front/SportRecordList" },
     { "path": "pages/Front/HealthArticleList" },
     { "path": "pages/Front/HealthArticleForm" },
     { "path": "pages/Front/MyHealthArticleList" },
@@ -27,8 +28,11 @@
     { "path": "pages/Front/LikeRecordList" },
     { "path": "pages/Front/HealthView" },
     { "path": "pages/Front/AiAnalyse" },
+    { "path": "pages/Front/FitnessVideoList" },
     { "path": "pages/Front/HealthNoticeList" },
     { "path": "pages/Front/HealthNoticeForm" },
+    { "path": "pages/Front/CommunityList" },
+    { "path": "pages/Front/CommunityForm" },
     { "path": "pages/Front/WeChatBind" }
   ],
   "globalStyle": {

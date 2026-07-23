@@ -36,6 +36,15 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
     @Autowired
     private FoodUnitMapper foodUnitMapper;
 
+    @Autowired
+    private SportRecordMapper sportRecordMapper;
+
+    @Autowired
+    private SportMapper sportMapper;
+
+    @Autowired
+    private SportUnitMapper sportUnitMapper;
+
     @Override
     public AiHealthAnalysisResponseDto analyzeUserHealth(Integer userId, Integer days) {
         try {
@@ -75,13 +84,21 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
             if (result == null) {
                 result = new AiHealthAnalysisResponseDto.AnalysisResult();
                 result.setScore(score);
+                result.setOverallHealthScore(score);
                 result.setEvaluation("一般");
+                result.setHealthLevel("一般");
                 result.setProblems(new ArrayList<>());
                 result.setSuggestions(new ArrayList<>());
+                result.setHealthRisks(new ArrayList<>());
+                result.setIndicatorAnalyses(new ArrayList<>());
+                result.setRecommendations(new ArrayList<>());
             } else {
 
                 if (result.getScore() == null) {
                     result.setScore(score);
+                }
+                if (result.getOverallHealthScore() == null) {
+                    result.setOverallHealthScore(result.getScore());
                 }
 
                 if (result.getProblems() == null) {
@@ -90,6 +107,46 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
 
                 if (result.getSuggestions() == null) {
                     result.setSuggestions(new ArrayList<>());
+                }
+
+                if (result.getEvaluation() == null) {
+                    result.setEvaluation(result.getHealthLevel() == null ? "一般" : result.getHealthLevel());
+                }
+
+                if (result.getHealthLevel() == null) {
+                    result.setHealthLevel(result.getEvaluation());
+                }
+
+                if (result.getHealthRisks() == null) {
+                    result.setHealthRisks(result.getRisks() == null ? new ArrayList<>() : result.getRisks());
+                }
+
+                if (result.getRisks() == null) {
+                    result.setRisks(result.getHealthRisks());
+                }
+
+                if (result.getNutritionAnalysis() == null) {
+                    result.setNutritionAnalysis(result.getNutrition());
+                }
+
+                if (result.getNutrition() == null) {
+                    result.setNutrition(result.getNutritionAnalysis());
+                }
+
+                if (result.getSportAnalysis() == null) {
+                    result.setSportAnalysis(result.getSport());
+                }
+
+                if (result.getSport() == null) {
+                    result.setSport(result.getSportAnalysis());
+                }
+
+                if (result.getIndicatorAnalyses() == null) {
+                    result.setIndicatorAnalyses(new ArrayList<>());
+                }
+
+                if (result.getRecommendations() == null) {
+                    result.setRecommendations(new ArrayList<>());
                 }
             }
 
@@ -109,12 +166,18 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
         double calories = 0;
         double protein = 0;
         double fat = 0;
+        double burned = 0;
 
         if (dto.getDietRecords() != null) {
             for (AiHealthAnalysisRequestDto.DietData d : dto.getDietRecords()) {
                 calories += safe(d.getCalories());
                 protein += safe(d.getProtein());
                 fat += safe(d.getFat());
+            }
+        }
+        if (dto.getSportRecords() != null) {
+            for (AiHealthAnalysisRequestDto.SportData s : dto.getSportRecords()) {
+                burned += safe(s.getCaloriesBurned());
             }
         }
 
@@ -124,6 +187,7 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
         if (calories < 1500) score -= 10;
         if (fat > 90) score -= 15;
         if (protein < 45) score -= 10;
+        if (burned < 150) score -= 10;
 
         return Math.max(score, 0);
     }
@@ -135,7 +199,7 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
     // ===================== Prompt =====================
     private String buildAnalysisPrompt(AiHealthAnalysisRequestDto dto, int score) {
 
-        double cal = 0, p = 0, f = 0, c = 0;
+        double cal = 0, p = 0, f = 0, c = 0, burned = 0;
 
         if (dto.getDietRecords() != null) {
             for (AiHealthAnalysisRequestDto.DietData d : dto.getDietRecords()) {
@@ -145,6 +209,11 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
                 c += safe(d.getCarbohydrates());
             }
         }
+        if (dto.getSportRecords() != null) {
+            for (AiHealthAnalysisRequestDto.SportData s : dto.getSportRecords()) {
+                burned += safe(s.getCaloriesBurned());
+            }
+        }
 
         return """
 你是专业健康分析AI，只输出JSON，不允许任何解释。
@@ -152,18 +221,53 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
 必须返回严格JSON格式：
 
 {
-  "score": %d,
-  "evaluation": "良好|一般|较差",
-  "problems": ["问题1"],
-  "suggestions": ["建议1","建议2"]
+  "overallHealthScore": %d,
+  "healthLevel": "良好|一般|较差",
+  "summary": "总体分析摘要",
+  "healthRisks": [
+    {
+      "riskType": "风险类型",
+      "riskLevel": "低|中|高",
+      "description": "风险描述",
+      "suggestions": "处理建议"
+    }
+  ],
+  "nutritionAnalysis": {
+    "nutritionBalanceScore": 0-100,
+    "calorieIntakeAssessment": "热量评价",
+    "proteinAssessment": "蛋白质评价",
+    "carbohydrateAssessment": "碳水评价",
+    "fatAssessment": "脂肪评价",
+    "dietaryRecommendations": ["饮食建议"]
+  },
+  "sportAnalysis": {
+    "exerciseVolumeAssessment": "运动量评价",
+    "exerciseFrequencyScore": 0-100,
+    "caloriesBurnedAssessment": "消耗评价",
+    "exerciseVarietyAssessment": "运动类型评价",
+    "exerciseRecommendations": ["运动建议"]
+  },
+  "indicatorAnalyses": [],
+  "recommendations": [
+    {
+      "recommendationType": "饮食|运动|生活习惯|医疗",
+      "priority": "高|中|低",
+      "title": "建议标题",
+      "content": "建议内容",
+      "expectedEffect": "预期效果"
+    }
+  ]
 }
 
 数据：
-热量:%f
+饮食摄入热量:%f
 蛋白质:%f
 脂肪:%f
 碳水:%f
-""".formatted(score, cal, p, f, c);
+运动消耗热量:%f
+净热量:%f
+运动记录数量:%d
+""".formatted(score, cal, p, f, c, burned, cal - burned, dto.getSportRecords() == null ? 0 : dto.getSportRecords().size());
     }
 
     // ===================== 用户数据 =====================
@@ -221,6 +325,33 @@ public class AiAnalyseServiceImpl implements AiAnalyseService {
                     d.setCarbohydrates(f.getCarbohydrates() * factor);
                 }
 
+                return d;
+            }).collect(Collectors.toList()));
+        }
+
+        List<SportRecord> sportRecords = sportRecordMapper.selectList(
+                Wrappers.<SportRecord>lambdaQuery()
+                        .eq(SportRecord::getRecordUserId, userId)
+                        .between(SportRecord::getRecordTime, start, end)
+        );
+
+        if (sportRecords != null) {
+            dto.setSportRecords(sportRecords.stream().map(r -> {
+                AiHealthAnalysisRequestDto.SportData d =
+                        new AiHealthAnalysisRequestDto.SportData();
+
+                Sport sport = sportMapper.selectById(r.getSportId());
+                SportUnit unit = sportUnitMapper.selectById(r.getSportUnitId());
+
+                if (sport != null) {
+                    d.setSportName(sport.getName());
+                }
+                if (unit != null && r.getRecordValue() != null) {
+                    double unitValue = safe(unit.getUnitValue());
+                    if (unitValue <= 0) unitValue = 1;
+                    d.setCaloriesBurned(safe(unit.getCalories()) * r.getRecordValue() / unitValue);
+                }
+                d.setRecordTime(r.getRecordTime());
                 return d;
             }).collect(Collectors.toList()));
         }

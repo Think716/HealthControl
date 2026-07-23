@@ -28,9 +28,19 @@ public class AiHealthAnalysisResponseDto {
         private Integer score;
 
         /**
+         * 页面展示用总评分
+         */
+        private Integer overallHealthScore;
+
+        /**
          * 健康等级
          */
         private String evaluation;
+
+        /**
+         * 页面展示用健康等级
+         */
+        private String healthLevel;
 
         /**
          * 总体摘要（论文加分点）
@@ -43,14 +53,39 @@ public class AiHealthAnalysisResponseDto {
         private List<HealthRisk> risks;
 
         /**
+         * 页面展示用风险列表
+         */
+        private List<HealthRisk> healthRisks;
+
+        /**
          * 营养分析
          */
         private NutritionAnalysis nutrition;
 
         /**
+         * 页面展示用营养分析
+         */
+        private NutritionAnalysis nutritionAnalysis;
+
+        /**
          * 运动分析
          */
         private SportAnalysis sport;
+
+        /**
+         * 页面展示用运动分析
+         */
+        private SportAnalysis sportAnalysis;
+
+        /**
+         * 页面展示用指标分析
+         */
+        private List<IndicatorAnalysis> indicatorAnalyses;
+
+        /**
+         * 页面展示用综合建议
+         */
+        private List<Recommendation> recommendations;
 
         /**
          * 问题列表
@@ -68,11 +103,17 @@ public class AiHealthAnalysisResponseDto {
 
         private String type;     // 风险类型
 
+        private String riskType;
+
         private String level;    // 低/中/高
+
+        private String riskLevel;
 
         private String description;
 
         private String advice;
+
+        private String suggestions;
     }
 
     @Data
@@ -87,6 +128,18 @@ public class AiHealthAnalysisResponseDto {
         private Double carbs;
 
         private String evaluation;
+
+        private Integer nutritionBalanceScore;
+
+        private String calorieIntakeAssessment;
+
+        private String proteinAssessment;
+
+        private String carbohydrateAssessment;
+
+        private String fatAssessment;
+
+        private List<String> dietaryRecommendations;
     }
 
     @Data
@@ -97,5 +150,47 @@ public class AiHealthAnalysisResponseDto {
         private String activityLevel;
 
         private String evaluation;
+
+        private String exerciseVolumeAssessment;
+
+        private Integer exerciseFrequencyScore;
+
+        private String caloriesBurnedAssessment;
+
+        private String exerciseVarietyAssessment;
+
+        private List<String> exerciseRecommendations;
+    }
+
+    @Data
+    public static class IndicatorAnalysis {
+
+        private String indicatorName;
+
+        private String indicatorType;
+
+        private Object currentValue;
+
+        private String normalRange;
+
+        private String status;
+
+        private String trend;
+
+        private String advice;
+    }
+
+    @Data
+    public static class Recommendation {
+
+        private String recommendationType;
+
+        private String priority;
+
+        private String title;
+
+        private String content;
+
+        private String expectedEffect;
     }
 }

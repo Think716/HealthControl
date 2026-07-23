@@ -27,6 +27,11 @@ export const useCommonStore = defineStore("common", {
 	    icon: HealthIndicatorIcon,
 	  },
       {
+        url: "/pages/Front/CommunityList",
+        label: "社区",
+        icon: HomeIcon,
+      },
+      {
         url: "/pages/Front/UserCenter",
         label: "个人中心",
         icon: UserIcon,

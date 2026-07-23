@@ -45,6 +45,16 @@ const _sfc_main = {
         url: "/pages/Front/DietRecordList"
       });
     };
+    const ToSportRecord = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/Front/SportRecordList"
+      });
+    };
+    const ToFitnessVideoList = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/Front/FitnessVideoList"
+      });
+    };
     const ToHealthRecordList = () => {
       common_vendor.index.navigateTo({
         url: "/pages/Front/HealthIndicatorRecordList"
@@ -151,7 +161,7 @@ const _sfc_main = {
           healthArticleList.value = response.Data.Items;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/Front/Index.vue:334", "获取健康知识列表失败:", error);
+        common_vendor.index.__f__("error", "at pages/Front/Index.vue:347", "获取健康知识列表失败:", error);
         common_vendor.index.showToast({
           title: "获取数据失败",
           icon: "error"
@@ -224,11 +234,13 @@ const _sfc_main = {
         h: common_vendor.o(($event) => ToHealthView()),
         i: common_vendor.o(($event) => ToAiAnalyse()),
         j: common_vendor.o(($event) => ToDietRecordList()),
-        k: common_vendor.o(($event) => ToHealthNoticeList()),
-        l: common_vendor.o(($event) => ToHealthArticleList()),
-        m: common_vendor.o(($event) => ToRecipeList()),
+        k: common_vendor.o(($event) => ToSportRecord()),
+        l: common_vendor.o(($event) => ToFitnessVideoList()),
+        m: common_vendor.o(($event) => ToHealthNoticeList()),
         n: common_vendor.o(($event) => ToHealthArticleList()),
-        o: common_vendor.f(healthArticleList.value, (article, k0, i0) => {
+        o: common_vendor.o(($event) => ToRecipeList()),
+        p: common_vendor.o(($event) => ToHealthArticleList()),
+        q: common_vendor.f(healthArticleList.value, (article, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(article.Title),
             b: common_vendor.t(getArticleDesc(article.Content)),
@@ -243,7 +255,7 @@ const _sfc_main = {
             i: common_vendor.o(($event) => ToHealthArticleDetail(article.Id), article.Id)
           });
         }),
-        p: healthArticleList.value.length === 0
+        r: healthArticleList.value.length === 0
       }, healthArticleList.value.length === 0 ? {} : {});
     };
   }
